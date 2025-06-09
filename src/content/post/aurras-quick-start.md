@@ -1,6 +1,6 @@
 ---
 title: "Quick Start Guide"
-description: "Get started with Aurras in 2 minutes - your first steps to terminal music mastery"
+description: "Welcome to Aurras! This guide will get you playing music in your terminal in just 2 minutes."
 publishDate: "2025-06-09T00:00:00Z"
 seriesId: "aurras-docs"
 orderInSeries: 2
@@ -8,185 +8,198 @@ tags: ["aurras", "quick-start", "tutorial", "docs"]
 draft: false
 ---
 
-# Quick Start Guide
-
-Welcome to Aurras! This guide will get you playing music in your terminal in just 2 minutes.
-
-## Your First Song
+# Your First Song
 
 ### Step 1: Launch Aurras
-Open your terminal and run:
-
 ```bash
+# Install Aurras (if you haven't already)
+pip install aurras
+
+# Launch the interactive mode
 aurras
+
+# Or use command-line mode to search and play directly
+aurras "bohemian rhapsody"
+
+# For more options and features
+aurras --help
 ```
 
-If you have music files in common locations, Aurras will automatically scan and display them. If not, you'll see the welcome screen.
+### Step 2: Search and Play Your First Song
 
-### Step 2: Add Your Music Library
+Aurras provides multiple ways to find and play music:
 
-#### Option A: Scan a Directory
+#### Option A: Direct Song Search
 ```bash
-# Scan your music folder
-aurras scan ~/Music
+# Search for any song by name
+aurras "song name"
 
-# Or scan multiple directories
-aurras scan ~/Music ~/Downloads/Music
+# Search with artist
+aurras "bohemian rhapsody queen"
 ```
 
-#### Option B: Play a Single File
+#### Option B: Interactive Mode
+1. Launch `aurras` with no arguments to enter interactive mode
+2. Type your search query directly
+3. Use arrow keys to navigate results
+4. Press Enter to play
+
+#### Option C: Use Commands and Shortcuts
 ```bash
-# Play any audio file directly
-aurras play ~/Music/song.mp3
+# Download and play offline
+aurras download "favorite song"
 
-# Aurras supports: MP3, FLAC, WAV, OGG, M4A, and more
+# Play from your downloaded collection
+aurras offline
+
+# View your playlists
+aurras playlist
 ```
 
-#### Option C: Use the Interactive Mode
-1. Launch `aurras` with no arguments
-2. Press `a` to add music directories
-3. Navigate and select your music folders
-4. Press `Enter` to confirm
+### Step 3: Master the Basic Controls
 
-### Step 3: Navigate Your Library
-
-Once your music is loaded, you'll see the main interface:
-
-```
-┌─ Aurras Music Player ────────────────────────────────────┐
-│ Library (1,247 tracks)                    ♪ Playing: On │
-├──────────────────────────────────────────────────────────┤
-│ ♪ Song Title                    Artist        Album      │
-│ → Amazing Grace                 Artist Name   Album 2024 │
-│   Another Song                  Different     Other Album│
-│   Beautiful Music               Great Artist  Best Songs │
-│                                                          │
-│ [Progress Bar ████████████░░░░] 2:34 / 4:12             │
-│ Volume: ████████░░ 80%          Shuffle: Off  Repeat: ••│
-└──────────────────────────────────────────────────────────┘
-```
+Once a song starts playing, you'll see the main Aurras interface with real-time synced lyrics and playback information.
 
 ## Essential Controls
 
-### Playback Controls
+### Basic Playback Controls
 | Key | Action |
 |-----|--------|
 | `Space` | Play/Pause |
-| `Enter` | Play selected track |
-| `n` / `→` | Next track |
-| `p` / `←` | Previous track |
-| `s` | Shuffle toggle |
-| `r` | Repeat mode (off → track → all) |
+| `n` | Next song |
+| `b` | Previous song |
+| `l` | Toggle lyrics display |
+| `q` | Quit playback |
+| `↑` / `↓` | Volume up/down |
+| `←` / `→` | Seek backward/forward |
+| `t` | Switch themes |
 
-### Navigation
+### Jump Mode
+Before pressing `b` or `n`, you can press any *number* to jump through that many songs:
+- `5n` - Skip forward 5 songs
+- `3b` - Go back 3 songs
+
+### Command Palette & Options
 | Key | Action |
 |-----|--------|
-| `↑` / `↓` | Navigate track list |
-| `j` / `k` | Navigate track list (vim-style) |
-| `Page Up` / `Page Down` | Scroll faster |
-| `Home` / `End` | Jump to first/last track |
-
-### Volume & Seeking
-| Key | Action |
-|-----|--------|
-| `+` / `=` | Volume up |
-| `-` / `_` | Volume down |
-| `m` | Mute toggle |
-| `→` / `l` | Seek forward 10s |
-| `←` / `h` | Seek backward 10s |
-| `Shift + →` | Seek forward 30s |
-| `Shift + ←` | Seek backward 30s |
-
-### Views & Search
-| Key | Action |
-|-----|--------|
-| `/` | Search tracks |
-| `Esc` | Clear search/exit modes |
-| `1` | Library view |
-| `2` | Playlist view |
-| `3` | Queue view |
-| `4` | Visualizer view |
-| `?` | Help screen |
+| `>` | Open command palette for quick actions |
+| `?` | Open options menu for feature access |
 
 ## Quick Tasks
 
-### Create Your First Playlist
-1. Select tracks with `Space` (multi-select)
-2. Press `Ctrl + P` to create playlist
-3. Enter playlist name
-4. Press `Enter` to save
+### Download Songs for Offline Play
+```bash
+# Download a song for offline listening
+aurras download "song name"
 
-### Queue Songs for Later
-1. Navigate to any song
-2. Press `q` to add to queue
-3. Press `3` to view queue
-4. Queue plays after current song ends
+# Download entire playlist
+aurras downloadp "playlist name"
 
-### Search Your Music
-1. Press `/` to open search
-2. Type artist, song, or album name
-3. Use `↑` / `↓` to navigate results
-4. Press `Esc` to clear search
+# Play offline music
+aurras offline
+```
 
-### Enable Visualizer
-1. Press `4` to switch to visualizer view
-2. Press `v` to cycle through visualization modes:
-   - Spectrum analyzer
-   - Waveform
-   - Bars
-   - Oscilloscope
+### Create and Manage Playlists
+```bash
+# View your playlists
+aurras playlist
+
+# Create a new playlist (it will be created when you add first song)
+aurras playlist "My Favorites"
+
+# Delete a playlist
+aurras delete "playlist name"
+```
+
+### Search with Intelligence
+The search bar supports:
+- **Live recommendations** as you type
+- **Command shortcuts** starting with `>`
+- **Options menu** starting with `?`
+- **History navigation** with ↑/↓ arrows
+
+### Import Your Spotify Library
+```bash
+# Set up Spotify integration
+aurras setup
+
+# Import your Spotify playlists
+aurras import
+
+# Search across Spotify and local files
+aurras "any song from spotify"
+```
 
 ## Common Workflows
 
-### Morning Routine: Quick Album Play
+### Quick Music Discovery
 ```bash
-# Search and play an album instantly
-aurras search "album:Favorite Album"
-# Or
-aurras play --album "Favorite Album"
+# Just search and play
+aurras "chill music"
+
+# Use interactive mode for exploration
+aurras
+> jazz piano
 ```
 
-### Focus Session: Ambient Playlist
+### Building Your Collection
 ```bash
-# Play ambient music on shuffle
-aurras play --genre ambient --shuffle
+# Download favorites for offline
+aurras download "relaxing ambient"
+
+# Organize into playlists
+aurras playlist "Study Music"
+# (Add songs to playlist through interactive mode)
+
+# Batch download playlists
+aurras downloadp "Study Music"
 ```
 
-### Discovery Mode: Random Exploration
+### Theme Customization
 ```bash
-# Play random tracks from library
-aurras play --random --limit 50
+# List available themes
+aurras theme
+
+# Switch to a specific theme
+aurras theme cyberpunk
+aurras theme galaxy
+aurras theme ocean
 ```
 
 ## Command Line Power User Tips
 
-### Direct Commands
+### Direct Commands and Shortcuts
 ```bash
-# Play specific artist
-aurras play --artist "Artist Name"
-
-# Play by genre
-aurras play --genre "jazz"
-
-# Play recently added
-aurras play --recent 30  # last 30 days
-
-# Background mode (no UI)
-aurras play --headless ~/Music/playlist.m3u
+# Use command shortcuts
+aurras d "song"          # download (d = download shortcut)
+aurras o                 # offline (o = offline shorthand)
+aurras p "playlist"      # playlist (p = playlist shorthand)
+aurras h                 # history (h = history shorthand)
+aurras v "playlist"      # view playlist (v = view shorthand)
 ```
 
-### Integration with Other Tools
+### Settings Management
 ```bash
-# Show current playing track
-aurras status
+# View all settings
+aurras settings
 
-# Control from scripts
-aurras pause
-aurras next
-aurras volume 75
+# Disable lyrics display
+aurras settings --set appearance-settings.display-lyrics no
 
-# Export current playlist
-aurras export --format m3u ~/playlists/current.m3u
+# Reset all settings to defaults
+aurras settings --reset
+```
+
+### Backup & Restore
+```bash
+# Create a backup of your data
+aurras backup --create
+
+# List existing backups
+aurras backup
+
+# Restore from backup
+aurras backup --restore ID
 ```
 
 ## Customization Quick Wins
@@ -224,9 +237,9 @@ aurras config set audio.sample_rate 96000
 Now that you're up and running:
 
 1. **[Basic Usage Guide](/posts/aurras-basic-usage)** - Master all interface features
-2. **[Configuration](/posts/aurras-configuration)** - Customize everything to your liking
-3. **[Advanced Features](/posts/aurras-advanced-features)** - Explore plugins, equalizer, and more
-4. **[Keyboard Shortcuts](/posts/aurras-keyboard-shortcuts)** - Complete reference
+2. **[Troubleshooting Guide](/posts/aurras-troubleshooting)** - Solve common issues and optimize performance
+3. **[Technical Deep Dive](/posts/aurras-technical-deep-dive)** - Explore advanced features and architecture
+4. **[About Aurras](/about)** - Learn more about the project and philosophy
 
 ## Getting Help
 

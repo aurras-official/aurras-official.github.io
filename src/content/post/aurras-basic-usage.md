@@ -1,6 +1,6 @@
 ---
 title: "Basic Usage Guide"
-description: "Master Aurras interface, controls, and essential features for everyday music enjoyment"
+description: "Master Aurras with this comprehensive guide to the interface, controls, and essential features that make your terminal music experience exceptional."
 publishDate: "2025-06-09T00:00:00Z"
 seriesId: "aurras-docs"
 orderInSeries: 3
@@ -8,97 +8,515 @@ tags: ["aurras", "usage", "interface", "controls", "docs"]
 draft: false
 ---
 
-# Basic Usage Guide
+# Interface Overview
 
-Master Aurras with this comprehensive guide to the interface, controls, and essential features that make terminal music enjoyable.
+### Main Playback Interface
 
-## Interface Overview
-
-### Main Interface Layout
+When playing music, Aurras displays a clean, informative interface:
 
 ```
-┌─ Aurras v2.1.0 ──────────────────────────────────────────┐
-│ 🎵 Library • 1,247 tracks • Playing: On    [GitHub] [?] │ ← Header Bar
-├──────────────────────────────────────────────────────────┤
-│ Search: _______________________________ [Filter: All ▼] │ ← Search Bar  
-├──────────────────────────────────────────────────────────┤
-│   Track Title                Artist          Album       │ ← Column Headers
-│ ♪ Currently Playing Song     Great Artist    Album 2024  │ ← Playing Track
-│ → Selected Track             Artist Name     Other Album │ ← Selected Track
-│   Another Song               Different One   Best Songs  │ ← Regular Track
-│   ...                                                    │
-├──────────────────────────────────────────────────────────┤
-│ [████████████████░░░░░░] 3:42 / 5:18    Shuffle    Loop │ ← Progress Bar
-│ Volume: ████████░░ 80%     Queue: 5     Equalizer: On   │ ← Status Bar
-└──────────────────────────────────────────────────────────┘
+🎵 Now Playing: "Bohemian Rhapsody" by Queen
+📀 Album: A Night at the Opera (1975)
+⏱️  Progress: [████████████░░░░░░░░] 3:42 / 5:55
+🔊 Volume: 85% | 🎵 Quality: 320kbps | 🎨 Theme: cyberpunk
+
+💬 Real-time synced lyrics (toggle with 'l'):
+   Is this the real life?
+   Is this just fantasy?
+► Caught in a landslide
+   No escape from reality
+
+⌨️  Controls: [Space] Play/Pause | [n] Next | [b] Previous | [q] Quit
 ```
 
-### Interface Elements
+### Search Interface Components
 
-#### Header Bar
-- **Title**: Shows current version and mode
-- **Track Count**: Total tracks in current view
-- **Status**: Playing/Paused/Stopped
-- **Quick Actions**: Access to help and external links
+Aurras features an intelligent search system with multiple interaction modes:
 
-#### Track List
-- **Playing Indicator** (`♪`): Currently playing track
-- **Selection Cursor** (`→`): Currently selected track
-- **Multi-selection** (`✓`): Multiple tracks selected
-- **Track Info**: Title, Artist, Album, Duration
-
-#### Control Bar
-- **Progress Bar**: Current position in track
-- **Time Display**: Current time / Total duration
-- **Mode Indicators**: Shuffle, Repeat, Queue status
-- **Volume**: Visual volume level indicator
-
-## Navigation & Selection
-
-### Basic Navigation
-
-#### Moving Around
+#### Standard Search
+Simply type your query to search for songs across YouTube and local files:
 ```
-Key                 Action
-↑ / k              Move up one track
-↓ / j              Move down one track
-Page Up / Ctrl+U    Move up 10 tracks
-Page Down / Ctrl+D  Move down 10 tracks
-Home / g g         Jump to first track
-End / G            Jump to last track
-Ctrl + ↑          Jump to currently playing track
+🔍 Search: bohemian rhapsody queen
 ```
 
-#### Track Selection
+#### Command Palette (Type `>`)
+Access powerful commands and features:
 ```
-Key                 Action
-Enter              Play selected track
-Space              Toggle selection (multi-select)
-Ctrl+A             Select all visible tracks
-Ctrl+Shift+A       Clear all selections
-Tab                Add selection to queue
-Shift+Enter        Play selection and clear
+🔍 Search: > theme cyberpunk
+🔍 Search: > download playlist "My Favorites"
+🔍 Search: > settings appearance
 ```
 
-### Views & Modes
-
-#### Switching Views
+#### Options Menu (Type `?`)
+Quick access to special features:
 ```
-Key     View                Description
-1       Library View        All tracks in library
-2       Playlist View       Your saved playlists
-3       Queue View          Upcoming tracks
-4       Visualizer View     Audio visualization
-5       Album View          Browse by albums
-6       Artist View        Browse by artists
-7       Genre View         Browse by genres
-8       Recent View        Recently played/added
+🔍 Search: ? local
+🔍 Search: ? discover
+🔍 Search: ? disco mode
 ```
 
-#### View-Specific Controls
+## Core Interface Modes
 
-##### Library View (Default)
-- Browse all tracks in your music library
+### Interactive Mode (Primary Interface)
+
+Launch with `aurras` to enter the main interactive interface:
+
+```bash
+aurras
+```
+
+This mode provides:
+- **Real-time search bar** with live recommendations
+- **Intelligent command palette** for quick actions
+- **Context-aware highlighting** with theme integration
+- **Smart search history** accessible with ↑/↓ arrows
+- **Live feedback** and status updates
+
+### Command-Line Mode (Direct Playback)
+
+Play music instantly with direct commands:
+
+```bash
+# Play a specific song
+aurras "Hotel California Eagles"
+
+# Use shortcuts and commands
+aurras download "Stairway to Heaven"
+aurras offline  # Play downloaded music
+aurras playlist "My Mix"
+```
+
+## Essential Playback Controls
+
+### Primary Controls
+```
+Key        Action                     Description
+Space      Play/Pause                Toggle playback
+n          Next Track                Skip to next song  
+b          Previous Track            Go to previous song
+q          Quit                      Exit player
+l          Toggle Lyrics             Show/hide synced lyrics
+t          Switch Theme              Cycle through themes
+↑/↓        Volume Control            Increase/decrease volume
+←/→        Seek                      Jump backward/forward
+ESC        Stop Jump Mode            Cancel number-based jumping
+```
+
+### Advanced Jump Controls
+
+Aurras features a powerful "Jump Mode" for precise navigation:
+
+```bash
+# Jump multiple tracks
+5n          # Skip forward 5 songs
+3b          # Go back 3 songs
+10n         # Jump ahead 10 tracks
+```
+
+### Seek Controls
+```
+Key        Seek Amount               Use Case
+←          5 seconds back            Fine adjustments
+→          5 seconds forward         Quick repositioning
+Shift+←    30 seconds back           Skip long intros
+Shift+→    30 seconds forward        Jump to chorus
+```
+
+## Music Discovery & Search
+
+### Basic Search
+
+Type directly in the search bar to find music:
+
+```bash
+# Search by song title
+bohemian rhapsody
+
+# Search by artist
+pink floyd
+
+# Search artist and song
+eagles hotel california
+
+# Search by album
+dark side of the moon
+```
+
+### Advanced Search Features
+
+#### Smart Autocompletion
+As you type, Aurras provides intelligent suggestions:
+- Song titles with artist names
+- Popular completions based on your history
+- Contextual recommendations
+
+#### Live Recommendations
+Real-time suggestions appear as you type, showing:
+- Matching songs from YouTube
+- Your downloaded music
+- Popular tracks from the artist
+
+#### Search History
+Use arrow keys to navigate your search history:
+```
+↑    Previous search
+↓    Next search
+```
+
+## Command System
+
+### Core Commands & Shortcuts
+
+Aurras provides both full commands and convenient shortcuts:
+
+#### Download Management
+```
+Command              Shortcut    Description
+download            d           Download current/specified song
+downloadp           dp          Download entire playlist
+offline             o           Play from downloaded music
+```
+
+#### Playlist Operations
+```
+Command              Shorthand   Description
+playlist            p           Play a specific playlist
+view                v           View playlist contents
+delete              de          Delete a playlist
+import              -           Import Spotify playlists
+```
+
+#### History & Discovery
+```
+Command              Shorthand   Description
+history             h           Show listening history
+previous            prev        Play previous song
+search              -           Search by song/artist
+clear               -           Clear listening history
+```
+
+#### System Management
+```
+Command              Description
+setup               Setup Spotify integration
+cache               Display cache information
+cleanup             Clean up cached files
+self                App management (update, uninstall, etc.)
+```
+
+### Using Commands
+
+Type commands in the search bar:
+```bash
+# Download the current song
+download
+
+# Play offline music
+o
+
+# View playlists
+v
+
+# Check listening history
+h
+```
+
+## Music Sources & Integration
+
+### YouTube Integration (Primary Source)
+- Unlimited access to millions of songs
+- High-quality audio streaming
+- Intelligent search with filters
+- Automatic quality selection
+
+### Local Music Priority
+- Downloaded songs play instantly
+- Gapless playback for offline tracks
+- Local files prioritized over streaming
+- Smart caching for frequently played songs
+
+### Spotify Integration
+
+#### Setup Process
+```bash
+# Launch setup wizard
+aurras
+> setup
+
+# Or use command shorthand
+setup
+```
+
+Follow the OAuth flow to connect your Spotify account for:
+- Full library access
+- Playlist importing
+- Synchronized listening history
+
+## Playlist Management
+
+### Creating Playlists
+
+Playlists are created automatically when you first add songs:
+
+```bash
+# Add current song to "My Favorites" 
+# (creates playlist if it doesn't exist)
+playlist "My Favorites"
+```
+
+### Managing Playlists
+
+#### View Playlists
+```bash
+# List all playlists
+v
+
+# View specific playlist
+view "Workout Mix"
+```
+
+#### Download Playlists
+```bash
+# Download entire playlist
+dp "My Favorites"
+
+# Download with specific quality
+downloadp "Chill Mix" --quality 320k
+```
+
+#### Import from Spotify
+```bash
+# Import all Spotify playlists
+import
+
+# Import specific playlist
+import "Discover Weekly"
+```
+
+## Download Management
+
+### Downloading Music
+
+#### Single Songs
+```bash
+# Download currently playing song
+download
+
+# Download specific song
+download "Imagine Dragons Believer"
+
+# Use shorthand
+d
+```
+
+#### Playlist Downloads
+```bash
+# Download entire playlist
+downloadp "My Mix"
+
+# Download with options
+downloadp "Favorites" --format flac --bitrate 320k
+```
+
+### Offline Playback
+
+Access your downloaded music:
+```bash
+# Play from downloads
+offline
+
+# Use shorthand
+o
+```
+
+Benefits of offline music:
+- **Instant playback** - No loading time
+- **Gapless transitions** - Seamless song changes  
+- **Higher reliability** - No network dependencies
+- **Priority playing** - Local files play first
+
+## Customization & Themes
+
+### Theme Switching
+
+Aurras includes 10 built-in themes that can be switched instantly:
+
+```bash
+# Cycle through themes during playback
+t
+
+# Set specific theme via command palette
+> theme ocean
+> theme cyberpunk
+> theme galaxy
+```
+
+Available themes:
+- **Galaxy** - Deep space purples and blues
+- **Neon** - Vibrant digital visualization  
+- **Vintage** - Warm retro vinyl feel
+- **Minimal** - Clean distraction-free interface
+- **Nightclub** - Dark club atmosphere
+- **Cyberpunk** - Bright futuristic aesthetic
+- **Forest** - Earthy green natural tones
+- **Ocean** - Calming blue oceanic palette
+- **Sunset** - Warm orange and pink tones
+- **Monochrome** - Classic black and white
+
+### Real-time Theme Changes
+
+Switch themes without interrupting playback:
+- Press `t` to cycle through all themes
+- Themes apply instantly to all interface elements
+- Lyrics highlighting adapts to theme colors
+- Search bar and feedback match theme style
+
+## Advanced Features
+
+### Synced Lyrics
+
+Experience lyrics that dance with your music:
+
+#### Toggle Lyrics Display
+```bash
+# Show/hide lyrics
+l
+```
+
+#### Lyrics Features
+- **Millisecond accuracy** - Perfect synchronization
+- **Gradient highlighting** - Current line emphasis
+- **Theme integration** - Colors match your theme
+- **Real-time updates** - Follows playback position
+- **Smart formatting** - Context lines for readability
+
+### Smart Feedback System
+
+Aurras provides real-time feedback for all actions:
+- **Search suggestions** as you type
+- **Command confirmation** when executed
+- **Error messages** with helpful guidance
+- **Status updates** for downloads and operations
+- **Theme-aware styling** for visual consistency
+
+### Cache Management
+
+Monitor and manage your music cache:
+
+```bash
+# Check cache status
+cache
+
+# Clean up old files
+cleanup
+```
+
+Cache features:
+- **Intelligent storage** of frequently played songs
+- **Automatic cleanup** of old cache files
+- **Size monitoring** to prevent storage overflow
+- **Download management** with duplicate detection
+
+## Tips for Effective Usage
+
+### Search Strategies
+
+1. **Be specific but flexible**
+   ```bash
+   # Good: Include artist name
+   "hotel california eagles"
+   
+   # Better: Use distinctive keywords
+   "bohemian rhapsody queen"
+   ```
+
+2. **Use command shortcuts**
+   ```bash
+   # Instead of typing full commands
+   d           # download
+   o           # offline  
+   h           # history
+   ```
+
+3. **Leverage search history**
+   - Use ↑/↓ arrows to revisit previous searches
+   - Build on previous queries for similar music
+
+### Workflow Optimization
+
+1. **Download frequently played songs**
+   ```bash
+   # Download for offline access
+   d
+   ```
+
+2. **Organize with playlists**
+   ```bash
+   # Create themed playlists
+   playlist "Study Music"
+   playlist "Workout Beats"
+   ```
+
+3. **Use jump mode for long playlists**
+   ```bash
+   # Skip multiple tracks quickly
+   5n          # Jump ahead 5 songs
+   10b         # Go back 10 songs
+   ```
+
+### Performance Tips
+
+1. **Let downloads complete** for best experience
+2. **Use offline mode** for unstable connections
+3. **Regular cache cleanup** for optimal storage
+4. **Theme switching** for different moods/times
+
+## Troubleshooting Common Issues
+
+### Playback Issues
+
+**Song won't play or loads slowly:**
+1. Check internet connection
+2. Try playing the song again
+3. Switch to offline mode if downloaded: `o`
+
+**Display not updating:**
+1. May indicate slow connection
+2. Wait a moment for buffer to catch up
+3. Restart the song if needed
+
+### Search Problems
+
+**No results found:**
+1. Try simpler search terms
+2. Check spelling of artist/song names
+3. Use partial matches instead of full titles
+
+**Wrong song playing:**
+1. Be more specific in search (include artist)
+2. Use unique keywords from the song title
+
+### Download Issues
+
+**Download fails:**
+1. Check internet connection
+2. Verify sufficient storage space
+3. Try again with retry mechanism
+
+For more detailed troubleshooting, see our [Troubleshooting Guide](/posts/aurras-troubleshooting).
+
+## What's Next?
+
+You've mastered Aurras basics! Continue your journey:
+
+1. **[Troubleshooting Guide](/posts/aurras-troubleshooting)** - Solve common issues
+2. **[Quick Start Guide](/posts/aurras-quick-start)** - Essential commands recap
+3. **[Technical Deep Dive](/posts/aurras-technical-deep-dive)** - Advanced architecture details
+4. **[Installation Guide](/posts/aurras-installation)** - Setup reference
+
+---
+
+**Happy listening!** 🎵 You now have all the tools to enjoy music efficiently in your terminal with Aurras.
 - Sort by any column (Title, Artist, Album, Date)
 - Filter by file type, rating, or custom criteria
 
@@ -377,10 +795,10 @@ d       Delete      x       Crossfade    Ctrl+S Settings
 
 You've mastered the basics! Continue your Aurras journey:
 
-1. **[Configuration Guide](/posts/aurras-configuration)** - Customize everything
-2. **[Advanced Features](/posts/aurras-advanced-features)** - Equalizer, plugins, automation
-3. **[Keyboard Shortcuts](/posts/aurras-keyboard-shortcuts)** - Complete reference
-4. **[Troubleshooting](/posts/aurras-troubleshooting)** - Solve common issues
+1. **[Troubleshooting Guide](/posts/aurras-troubleshooting)** - Solve common issues and optimize performance
+2. **[Technical Deep Dive](/posts/aurras-technical-deep-dive)** - Advanced architecture and features
+3. **[Quick Start Guide](/posts/aurras-quick-start)** - Essential commands recap
+4. **[Installation Guide](/posts/aurras-installation)** - Setup and configuration reference
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: "Troubleshooting Guide"
-description: "Solve common Aurras issues, optimize performance, and get help when things go wrong"
+description: "Having issues with Aurras? This comprehensive troubleshooting guide will help you diagnose and fix common problems based on real user experiences and solutions."
 publishDate: "2025-06-09T00:00:00Z"
 seriesId: "aurras-docs"
 orderInSeries: 4
@@ -8,96 +8,761 @@ tags: ["aurras", "troubleshooting", "support", "debugging", "docs"]
 draft: false
 ---
 
-# Troubleshooting Guide
-
-Having issues with Aurras? This comprehensive troubleshooting guide will help you diagnose and fix common problems.
-
-## Quick Diagnostics
+# Quick Diagnostics
 
 ### Check System Status
 ```bash
 # Verify Aurras installation
 aurras --version
 
-# Check audio devices
-aurras --list-devices
+# Get help with all available commands
+aurras --help
 
-# Test audio system
-aurras --test-audio
+# Check application status
+aurras self --version
 
-# View configuration
-aurras config show
-
-# Check for issues
-aurras --doctor
+# View dependency information
+aurras self --check-dependencies
 ```
 
-### Enable Debug Mode
+### Enable Debug Information
 ```bash
-# Run with detailed logging
-aurras --log-level debug
+# Get detailed error information
+aurras --verbose
 
-# Save logs to file
-aurras --log-file ~/aurras-debug.log
+# Check cache and download status
+aurras cache
 
-# View real-time logs
-tail -f ~/.config/aurras/logs/aurras.log
+# View listening history for pattern analysis
+aurras history
 ```
 
 ## Installation Issues
 
-### "Command not found" Error
+### MPV or libmpv Not Found
 
-**Problem**: `aurras: command not found`
+**Problem**: `mpv or libmpv not found` error when starting Aurras
+
+This is the most common issue and varies by platform:
+
+#### Windows Users
+**Solution**: Aurras includes bundled MPV DLLs for Windows, so this error shouldn't occur.
+
+If you still see MPV-related errors:
+```bash
+# Force reinstall to get fresh bundled libraries
+pip install --upgrade --force-reinstall aurras
+```
+
+#### Linux Users
+**Problem**: Missing MPV installation
+
+**Solution**: Install MPV via your package manager:
+```bash
+# Ubuntu/Debian
+sudo apt update
+sudo apt install mpv
+
+# Fedora/RHEL
+sudo dnf install mpv
+
+# Arch Linux
+sudo pacman -S mpv
+
+# Verify installation
+mpv --version
+```
+
+#### macOS Users
+**Problem**: Missing MPV installation
+
+**Solution**: Install MPV via Homebrew:
+```bash
+# Install Homebrew if not present
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install MPV
+brew install mpv
+
+# Verify installation
+mpv --version
+```
+
+**Technical Note**: Aurras uses python-mpv bindings which require `libmpv` (the shared library). Installing the `mpv` package provides both the executable and the required `libmpv.so` (Linux) / `libmpv.dylib` (macOS) that Aurras needs.
+
+### Python Version Compatibility
+
+**Problem**: `aurras` command not working after installation
 
 **Causes & Solutions**:
 
-1. **Not in PATH**:
+1. **Python version too old**:
    ```bash
-   # Check if aurras exists
+   # Check Python version (requires 3.12+)
+   python --version
+   python3 --version
+   
+   # Install Python 3.12 or newer from python.org
+   # Or use package manager:
+   
+   # Ubuntu (requires adding deadsnakes PPA)
+   sudo add-apt-repository ppa:deadsnakes/ppa
+   sudo apt update
+   sudo apt install python3.12
+   
+   # macOS
+   brew install python@3.12
+   ```
+
+2. **Installation to wrong Python environment**:
+   ```bash
+   # Install with specific Python version
+   python3.12 -m pip install aurras
+   
+   # Or create virtual environment
+   python3.12 -m venv aurras-env
+   source aurras-env/bin/activate
+   pip install aurras
+   ```
+
+3. **PATH issues**:
+   ```bash
+   # Check if aurras is in PATH
    which aurras
    
-   # Add to PATH (add to ~/.bashrc or ~/.zshrc)
-   export PATH="$PATH:/usr/local/bin"
+   # If not found, check where pip installed it
+   python3 -m pip show -f aurras
    
-   # Or install to standard location
-   sudo mv aurras /usr/local/bin/
+   # Add pip install location to PATH
+   export PATH="$PATH:$(python3 -m site --user-base)/bin"
    ```
 
-2. **Installation incomplete**:
-   ```bash
-   # Reinstall using package manager
-   # Ubuntu/Debian:
-   sudo apt reinstall aurras
-   
-   # macOS:
-   brew reinstall aurras
-   
-   # Or download fresh binary
-   curl -LO https://github.com/vedant-asati03/Aurras/releases/latest/download/aurras-linux-x64.tar.gz
-   ```
+### Package Installation Issues
 
-### Permission Denied Errors
-
-**Problem**: `Permission denied` when running aurras
+**Problem**: `pip install aurras` fails
 
 **Solutions**:
 
-1. **Make executable**:
+1. **Upgrade pip first**:
    ```bash
-   chmod +x /usr/local/bin/aurras
+   python3 -m pip install --upgrade pip
+   pip install aurras
    ```
 
-2. **macOS quarantine** (macOS only):
+2. **Clear pip cache**:
    ```bash
-   xattr -d com.apple.quarantine /usr/local/bin/aurras
-   sudo spctl --add /usr/local/bin/aurras
+   pip cache purge
+   pip install aurras
    ```
 
-3. **SELinux issues** (Linux):
+3. **Install from specific index**:
    ```bash
-   # Check SELinux status
-   sestatus
+   pip install --index-url https://pypi.org/simple/ aurras
+   ```
+
+4. **Use alternative installation methods**:
+   ```bash
+   # AUR (Arch Linux)
+   yay -S aurras
+   
+   # Homebrew (macOS)
+   brew install aurras
+   
+   # Chocolatey (Windows)
+   choco install aurras
+   ```
+
+## Playback Issues
+
+### Display Information Not Updating
+
+**Problem**: The player's display freezes or fails to update song progress and information
+
+This is a common issue related to network connectivity:
+
+**Primary Causes**:
+1. Slow internet connection
+2. Network instability
+3. Temporary loading issues
+
+**Solutions**:
+
+1. **Try replaying the song**:
+   ```bash
+   # Stop current playback
+   q
+   
+   # Search and play the song again
+   aurras "song name artist"
+   ```
+
+2. **Check your internet connection**:
+   - Test with other applications
+   - Try switching to different network (mobile hotspot, etc.)
+   - Wait for connection to stabilize
+
+3. **Use offline mode if available**:
+   ```bash
+   # Switch to downloaded music
+   aurras offline
+   
+   # Or use shorthand
+   o
+   ```
+
+4. **Clear cache and retry**:
+   ```bash
+   # Check current cache status
+   aurras cache
+   
+   # Clean up cache
+   aurras cleanup
+   
+   # Try playing again
+   ```
+
+### Songs Won't Play or Take Long to Load
+
+**Problem**: Songs don't start playing or have long loading times
+
+**Solutions**:
+
+1. **Check network connection**:
+   - Ensure stable internet for YouTube streaming
+   - Test with different networks
+
+2. **Try different search terms**:
+   ```bash
+   # Be more specific with artist name
+   "bohemian rhapsody queen"
+   
+   # Try alternate spellings or shorter titles
+   "hotel california eagles"
+   ```
+
+3. **Switch to offline mode**:
+   ```bash
+   # Use downloaded music for instant playback
+   aurras offline
+   ```
+
+4. **Download frequently played songs**:
+   ```bash
+   # Download current song for future offline use
+   download
+   
+   # Or use shorthand
+   d
+   ```
+
+### Audio Quality Issues
+
+**Problem**: Poor audio quality or distorted sound
+
+**Solutions**:
+
+1. **Check internet speed**:
+   - Slow connections may cause quality reduction
+   - YouTube automatically adjusts quality based on connection
+
+2. **Download for better quality**:
+   ```bash
+   # Download songs for highest available quality
+   download "song name"
+   
+   # Download with specific format/quality
+   downloadp "playlist name" --format flac --bitrate 320k
+   ```
+
+3. **Check system audio settings**:
+   - Ensure system volume is appropriate
+   - Check for audio enhancements or equalizers
+
+## Search & Discovery Issues
+
+### No Search Results
+
+**Problem**: Search returns no results or wrong songs
+
+**Solutions**:
+
+1. **Improve search specificity**:
+   ```bash
+   # Include artist name
+   "imagine dragons believer"
+   
+   # Use distinctive keywords
+   "stairway to heaven led zeppelin"
+   
+   # Try partial matches
+   "bohemian rhapsody"
+   ```
+
+2. **Check spelling and try variations**:
+   ```bash
+   # Try different spellings
+   "gray" vs "grey"
+   "color" vs "colour"
+   
+   # Use common abbreviations
+   "ac dc" instead of "AC/DC"
+   ```
+
+3. **Use search history**:
+   ```bash
+   # Navigate previous searches with arrows
+   ↑  # Previous search
+   ↓  # Next search
+   ```
+
+4. **Clear search history if corrupted**:
+   ```bash
+   aurras clear
+   ```
+
+### Wrong Song Playing
+
+**Problem**: Search returns incorrect song or version
+
+**Solutions**:
+
+1. **Be more specific**:
+   ```bash
+   # Add more context
+   "thunderstruck acdc live"
+   "imagine dragons radioactive original"
+   ```
+
+2. **Include album information**:
+   ```bash
+   "hotel california eagles hell freezes over"
+   "bohemian rhapsody queen night opera"
+   ```
+
+3. **Try different keywords**:
+   ```bash
+   # Use alternative terms
+   "christmas song" vs "holiday music"
+   "rock song" vs "rock ballad"
+   ```
+
+## Download Issues
+
+### Download Failures
+
+**Problem**: Downloads fail or are incomplete
+
+**Solutions**:
+
+1. **Check internet connection**:
+   - Ensure stable connection for large downloads
+   - Consider downloading during off-peak hours
+
+2. **Verify storage space**:
+   ```bash
+   # Check available space
+   df -h  # Linux/macOS
+   
+   # Check Aurras cache location
+   aurras cache
+   ```
+
+3. **Retry download**:
+   ```bash
+   # Try downloading again
+   download "song name"
+   
+   # Download playlist in smaller batches
+   # Instead of entire playlist, download individual songs
+   ```
+
+4. **Clear cache and retry**:
+   ```bash
+   aurras cleanup
+   download "song name"
+   ```
+
+### Slow Download Speeds
+
+**Problem**: Downloads are very slow
+
+**Solutions**:
+
+1. **Check network speed**:
+   - Test with speed test tools
+   - Consider downloading during off-peak hours
+
+2. **Download one at a time**:
+   - Avoid downloading multiple songs simultaneously
+   - Focus on most important songs first
+
+3. **Use lower quality temporarily**:
+   ```bash
+   # Download with lower bitrate for faster speed
+   download "song name" --bitrate 128k
+   ```
+
+## Playlist Management Issues
+
+### Playlist Import Failures
+
+**Problem**: Spotify playlist import not working
+
+**Solutions**:
+
+1. **Setup Spotify integration**:
+   ```bash
+   # Run Spotify setup wizard
+   aurras setup
+   
+   # Or use in interactive mode
+   aurras
+   > setup
+   ```
+
+2. **Check OAuth authentication**:
+   - Follow the browser-based authentication flow
+   - Ensure you grant necessary permissions
+   - Verify Spotify credentials
+
+3. **Retry import**:
+   ```bash
+   # Import all playlists
+   import
+   
+   # Import specific playlist
+   import "playlist name"
+   ```
+
+### Playlist Not Found
+
+**Problem**: Created playlists don't appear or can't be accessed
+
+**Solutions**:
+
+1. **Check playlist names**:
+   ```bash
+   # List all playlists
+   view
+   
+   # Use exact names (fuzzy matching available)
+   playlist "My Favorites"
+   ```
+
+2. **Use fuzzy name matching**:
+   ```bash
+   # Aurras can find playlists with typos
+   "My Favrites" → finds "My Favorites"
+   "wrk out" → finds "Workout Mix"
+   ```
+
+3. **Check database integrity**:
+   ```bash
+   # Clear corrupted data and reimport
+   aurras backup --create  # Backup first
+   # Then clear and recreate playlists
+   ```
+
+## Performance Issues
+
+### High Memory Usage
+
+**Problem**: Aurras consuming too much memory
+
+**Solutions**:
+
+1. **Limit cache size**:
+   ```bash
+   # Check current cache usage
+   aurras cache
+   
+   # Clean up old cache files
+   aurras cleanup
+   ```
+
+2. **Use offline mode more**:
+   ```bash
+   # Offline mode uses less memory for streaming
+   aurras offline
+   ```
+
+3. **Restart Aurras periodically**:
+   - Exit with `q` and restart
+   - Clears temporary memory usage
+
+### Slow Performance
+
+**Problem**: Aurras feels sluggish or unresponsive
+
+**Solutions**:
+
+1. **Check system resources**:
+   ```bash
+   # Monitor CPU and memory usage
+   top
+   htop
+   ```
+
+2. **Close other applications**:
+   - Free up system resources
+   - Close unnecessary browser tabs
+   - Exit other music applications
+
+3. **Use command shortcuts**:
+   ```bash
+   # Use single letters instead of full commands
+   d           # instead of "download"
+   o           # instead of "offline"
+   h           # instead of "history"
+   ```
+
+## Configuration Issues
+
+### Settings Not Persisting
+
+**Problem**: Settings reset after restart
+
+**Solutions**:
+
+1. **Check configuration location**:
+   ```bash
+   # Settings stored at ~/.aurras/config/settings.yaml
+   ls -la ~/.aurras/config/
+   ```
+
+2. **Verify write permissions**:
+   ```bash
+   # Ensure Aurras can write to config directory
+   chmod 755 ~/.aurras/
+   chmod 644 ~/.aurras/config/settings.yaml
+   ```
+
+3. **Reset to defaults if corrupted**:
+   ```bash
+   aurras settings --reset
+   ```
+
+### Theme Issues
+
+**Problem**: Themes not switching or displaying incorrectly
+
+**Solutions**:
+
+1. **Try different themes**:
+   ```bash
+   # Cycle through themes during playback
+   t
+   
+   # Set specific theme
+   > theme cyberpunk
+   > theme ocean
+   ```
+
+2. **Check terminal compatibility**:
+   - Ensure terminal supports color
+   - Try different terminal applications
+   - Update terminal if needed
+
+3. **Reset theme settings**:
+   ```bash
+   # Switch to default theme
+   > theme galaxy
+   ```
+
+## Backup & Recovery Issues
+
+### Backup Creation Failed
+
+**Problem**: Cannot create backups
+
+**Solutions**:
+
+1. **Check storage space**:
+   ```bash
+   # Verify available space for backups
+   df -h ~/.local/share/aurras/backup  # Linux
+   df -h ~/Library/Application\ Support/aurras/backup  # macOS
+   ```
+
+2. **Check permissions**:
+   ```bash
+   # Ensure write access to backup directory
+   chmod 755 ~/.local/share/aurras/backup
+   ```
+
+3. **Manual backup**:
+   ```bash
+   # Copy important files manually
+   cp -r ~/.aurras/config ~/backup/aurras-config
+   cp -r ~/.aurras/playlists ~/backup/aurras-playlists
+   ```
+
+### Restore Failed
+
+**Problem**: Cannot restore from backup
+
+**Solutions**:
+
+1. **List available backups**:
+   ```bash
+   aurras backup
+   ```
+
+2. **Check backup integrity**:
+   ```bash
+   # Verify backup files exist and are readable
+   ls -la ~/.local/share/aurras/backup/
+   ```
+
+3. **Partial restore**:
+   - Manually copy specific files from backup
+   - Restore individual components instead of full backup
+
+## Network & Connectivity Issues
+
+### YouTube Access Problems
+
+**Problem**: Cannot access YouTube or frequent streaming errors
+
+**Solutions**:
+
+1. **Check YouTube accessibility**:
+   - Verify YouTube works in browser
+   - Check for regional restrictions
+   - Try different network
+
+2. **Clear cache**:
+   ```bash
+   aurras cleanup
+   ```
+
+3. **Use offline mode**:
+   ```bash
+   # Switch to downloaded music
+   aurras offline
+   ```
+
+### Spotify API Issues
+
+**Problem**: Spotify integration not working
+
+**Solutions**:
+
+1. **Re-run setup**:
+   ```bash
+   aurras setup
+   ```
+
+2. **Check Spotify service status**:
+   - Verify Spotify is accessible
+   - Check Spotify developer console
+
+3. **Clear Spotify credentials**:
+   ```bash
+   # Remove stored credentials and re-authenticate
+   rm ~/.aurras/config/spotify_credentials.json
+   aurras setup
+   ```
+
+## Getting Additional Help
+
+### Self-Management Commands
+
+```bash
+# Check version and update status
+aurras self --version
+
+# Update Aurras to latest version
+aurras self --update
+
+# Check for missing dependencies
+aurras self --check-dependencies
+
+# Get help with self-management
+aurras self --help
+```
+
+### Community Support
+
+1. **GitHub Issues**: [Report bugs and request features](https://github.com/vedant-asati03/Aurras/issues)
+2. **Discussions**: [Community discussions and Q&A](https://github.com/vedant-asati03/Aurras/discussions)
+3. **Documentation**: [Complete documentation and guides](https://vedant-asati03.github.io/)
+
+### Providing Debug Information
+
+When reporting issues, include:
+
+```bash
+# System information
+uname -a                    # Operating system
+python3 --version          # Python version
+mpv --version              # MPV version (Linux/macOS)
+
+# Aurras information
+aurras --version           # Aurras version
+aurras cache               # Cache status
+aurras self --check-dependencies  # Dependency status
+
+# Error logs
+# Run aurras with verbose output and share relevant error messages
+```
+
+### Last Resort: Complete Reset
+
+If all else fails, you can completely reset Aurras:
+
+**⚠️ Warning**: This will delete all your playlists, downloads, settings, and history.
+
+```bash
+# Create backup first (recommended)
+aurras backup --create
+
+# Complete uninstall and data removal
+aurras self --uninstall --remove-data
+
+# Fresh installation
+pip install aurras
+
+# Restore from backup if desired
+aurras backup --restore [backup-id]
+```
+
+## Prevention Tips
+
+### Best Practices
+
+1. **Regular backups**:
+   ```bash
+   # Enable automatic backups (default: every 24 hours)
+   aurras settings --set backup.enabled true
+   ```
+
+2. **Keep Aurras updated**:
+   ```bash
+   # Check for updates regularly
+   aurras self --update
+   ```
+
+3. **Monitor cache size**:
+   ```bash
+   # Check cache periodically
+   aurras cache
+   
+   # Clean up when needed
+   aurras cleanup
+   ```
+
+4. **Use stable network**:
+   - Download important music for offline use
+   - Avoid streaming during unstable connections
+
+5. **Organize playlists**:
+   - Create themed playlists for better organization
+   - Use descriptive names for easy identification
+
+---
+
+**Still having issues?** Don't hesitate to [open an issue](https://github.com/vedant-asati03/Aurras/issues) on GitHub or check the [discussions](https://github.com/vedant-asati03/Aurras/discussions) for community support.
    
    # If enabled, allow aurras
    sudo setsebool -P use_execmem on

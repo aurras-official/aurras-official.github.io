@@ -1,6 +1,6 @@
 ---
 title: "Installing Aurras"
-description: "Step-by-step guide to install Aurras terminal music player on Linux, macOS, and Windows"
+description: "Get Aurras up and running on your system in just a few minutes. Aurras supports Linux, macOS, and Windows with multiple installation methods."
 publishDate: "2025-06-09T00:00:00Z"
 seriesId: "aurras-docs"
 orderInSeries: 1
@@ -8,128 +8,91 @@ tags: ["aurras", "installation", "setup", "docs"]
 draft: false
 ---
 
-# Installing Aurras
+# Prerequisites
 
-Get Aurras up and running on your system in just a few minutes. Aurras supports Linux, macOS, and Windows with multiple installation methods.
+**Python 3.12 or newer**: Aurras is built on Python 3.12+ and requires this version for proper functionality. You can download the latest version of Python from the [official Python website](https://www.python.org/).
 
 ## System Requirements
-
-### Minimum Requirements
-- **OS**: Linux (Ubuntu 18.04+), macOS (10.14+), or Windows 10+
-- **RAM**: 512 MB available memory
+- **Python**: 3.12 or newer (required)
+- **OS**: Linux, macOS, or Windows 10+
+- **RAM**: 512 MB available memory (1GB recommended for large libraries)
 - **Storage**: 50 MB free disk space
 - **Audio**: Any audio output device
 
-### Recommended Requirements
-- **RAM**: 1 GB available memory (for large music libraries)
-- **Storage**: 100 MB free disk space
-- **Audio**: High-quality audio interface for best experience
+# Installation Methods
 
-## Installation Methods
+## Recommended: Python Package Index (pip)
 
-### Option 1: Download Pre-built Binaries (Recommended)
+This is the most universal method and is recommended for all users:
 
-The easiest way to install Aurras is using our pre-compiled binaries:
+### Windows
+No additional dependencies required. Aurras comes bundled with all necessary MPV components.
 
-#### Linux
 ```bash
-# Download the latest release
-curl -LO https://github.com/vedant-asati03/Aurras/releases/latest/download/aurras-linux-x64.tar.gz
-
-# Extract the archive
-tar -xzf aurras-linux-x64.tar.gz
-
-# Move to system PATH
-sudo mv aurras /usr/local/bin/
-
-# Make executable
-sudo chmod +x /usr/local/bin/aurras
-
-# Verify installation
-aurras --version
+pip install aurras
 ```
 
-#### macOS
-```bash
-# Using Homebrew (recommended)
-brew tap vedant-asati03/aurras
-brew install aurras
+### Linux & macOS
+Install MPV first, then Aurras:
 
-# Or download manually
-curl -LO https://github.com/vedant-asati03/Aurras/releases/latest/download/aurras-macos-x64.tar.gz
-tar -xzf aurras-macos-x64.tar.gz
-sudo mv aurras /usr/local/bin/
-aurras --version
+```bash
+# Install MPV (choose your platform)
+# Ubuntu/Debian
+sudo apt update && sudo apt install mpv
+
+# Arch Linux
+sudo pacman -S mpv
+
+# Fedora/RHEL
+sudo dnf install mpv
+
+# macOS (via Homebrew)
+brew install mpv
+
+# Install Aurras
+pip install aurras
 ```
 
-#### Windows
-1. Download `aurras-windows-x64.zip` from the [releases page](https://github.com/vedant-asati03/Aurras/releases/latest)
-2. Extract the zip file to a folder (e.g., `C:\Program Files\Aurras\`)
-3. Add the folder to your system PATH
-4. Open Command Prompt or PowerShell and run `aurras --version`
+## Alternative Installation Methods
 
-### Option 2: Package Managers
-
-#### Arch Linux (AUR)
+### Arch User Repository (AUR) - Arch Linux Only
 ```bash
-# Using yay
 yay -S aurras
-
-# Using paru
-paru -S aurras
 ```
 
-#### Ubuntu/Debian
+### Homebrew - macOS Only
 ```bash
-# Add our repository
-curl -fsSL https://apt.aurras.dev/gpg | sudo apt-key add -
-echo "deb https://apt.aurras.dev/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/aurras.list
-
-# Install
-sudo apt update
-sudo apt install aurras
+brew install aurras
 ```
 
-#### Fedora/CentOS/RHEL
+### Chocolatey - Windows Only
 ```bash
-# Add repository
-sudo dnf config-manager --add-repo https://rpm.aurras.dev/fedora/aurras.repo
-
-# Install
-sudo dnf install aurras
+choco install aurras
 ```
 
-### Option 3: Build from Source
+## Development Installation
 
-For the latest features or custom builds:
+For contributors and developers:
 
-#### Prerequisites
-- **Rust**: 1.70.0 or later
-- **Git**: Any recent version
-- **System libraries**: 
-  - Linux: `libasound2-dev`, `pkg-config`
-  - macOS: Xcode Command Line Tools
-  - Windows: Visual Studio Build Tools
-
-#### Build Steps
 ```bash
 # Clone the repository
 git clone https://github.com/vedant-asati03/Aurras.git
 cd Aurras
 
-# Build release version
-cargo build --release
+# Setup the development environment
+python setup_dev_env.py
 
-# Install to system PATH
-cargo install --path .
-
-# Verify installation
-aurras --version
+# Launch in development mode
+aurras --help
 ```
 
-## Post-Installation Setup
+For comprehensive guidelines on contributing to Aurras, please refer to our [Contributing Guide](https://github.com/vedant-asati03/Aurras/blob/main/CONTRIBUTING.md).
 
-### 1. First Run
+> **Technical Note**: Aurras requires `libmpv` (MPV's shared library) for audio playback. Installing the `mpv` package provides both the executable and the required `libmpv` library that Aurras uses through python-mpv bindings.
+
+# Post-Installation Setup
+
+## 1. First Run
 After installation, run Aurras for the first time:
 
 ```bash
@@ -142,14 +105,14 @@ On first launch, Aurras will:
 - Set up default settings
 - Create a sample configuration file
 
-### 2. Configuration Directory
+## 2. Configuration Directory
 Aurras stores its configuration in:
 - **Linux/macOS**: `~/.config/aurras/`
 - **Windows**: `%APPDATA%\Aurras\`
 
-### 3. Audio System Setup
+## 3. Audio System Setup
 
-#### Linux (ALSA/PulseAudio)
+### Linux (ALSA/PulseAudio)
 ```bash
 # Check audio devices
 aurras --list-devices
@@ -159,13 +122,13 @@ sudo apt install libasound2-plugins pulseaudio-utils  # Ubuntu/Debian
 sudo dnf install alsa-plugins-pulseaudio              # Fedora
 ```
 
-#### macOS (CoreAudio)
+### macOS (CoreAudio)
 No additional setup required. Aurras automatically detects available audio devices.
 
-#### Windows (WASAPI)
+### Windows (WASAPI)
 Ensure your audio drivers are up to date. Aurras works with any Windows-compatible audio device.
 
-## Verification
+# Verification
 
 Test your installation:
 
@@ -183,15 +146,15 @@ aurras /path/to/music/file.mp3
 aurras --help
 ```
 
-## Troubleshooting Installation
+# Troubleshooting Installation
 
-### Common Issues
+## Common Issues
 
-#### "Command not found" error
+### "Command not found" error
 - **Cause**: Aurras not in system PATH
 - **Solution**: Add the installation directory to your PATH environment variable
 
-#### Audio device errors on Linux
+### Audio device errors on Linux
 - **Cause**: Missing audio libraries or permissions
 - **Solution**: 
   ```bash
@@ -202,7 +165,7 @@ aurras --help
   sudo apt install libasound2-dev pulseaudio
   ```
 
-#### Permission denied on macOS
+### Permission denied on macOS
 - **Cause**: macOS security restrictions
 - **Solution**: 
   ```bash
@@ -210,11 +173,11 @@ aurras --help
   xattr -d com.apple.quarantine /usr/local/bin/aurras
   ```
 
-#### Windows antivirus blocking
+### Windows antivirus blocking
 - **Cause**: False positive detection
 - **Solution**: Add Aurras to your antivirus whitelist
 
-### Getting Help
+## Getting Help
 
 If you encounter issues:
 
@@ -224,13 +187,13 @@ If you encounter issues:
    - [GitHub Issues](https://github.com/vedant-asati03/Aurras/issues)
    - [Discord Community](https://discord.gg/QDJqZneMVB)
 
-## Next Steps
+# Next Steps
 
 Now that Aurras is installed, you're ready to:
 
 1. **[Quick Start Guide](/posts/aurras-quick-start)** - Get playing music in 2 minutes
 2. **[Basic Usage](/posts/aurras-basic-usage)** - Learn the essential commands and controls
-3. **[Configuration](/posts/aurras-configuration)** - Customize Aurras to your preferences
+3. **[Troubleshooting Guide](/posts/aurras-troubleshooting)** - Solve common issues and optimize your experience
 
 ---
 
