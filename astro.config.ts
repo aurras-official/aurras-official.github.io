@@ -25,6 +25,7 @@ import {
 
 // https://astro.build/config
 export default defineConfig({
+  site: "https://vedant-asati03.github.io",
   image: {
     domains: ["webmention.io"],
   },
@@ -46,10 +47,10 @@ export default defineConfig({
       /**
        * optional
        **/
-      // short_name: "Astro_Citrus",
+      // short_name: "Aurras",
       description: siteConfig.description,
       lang: siteConfig.lang,
-      icon: "public/icon.svg", // the source for generating favicon & icons
+      icon: "public/aurras.png", // the source for generating favicon & icons
       icons: [
         {
           src: "icons/apple-touch-icon.png", // used in src/components/BaseHead.astro L:26
@@ -114,8 +115,6 @@ export default defineConfig({
   },
   // https://docs.astro.build/en/guides/prefetch/
   prefetch: true,
-  // ! Please remember to replace the following site property with your own domain
-  site: "http://astrocitrus.artemkutsan.pp.ua/",
   vite: {
     build: {
       sourcemap: true, // Source maps generation

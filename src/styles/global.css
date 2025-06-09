@@ -76,100 +76,34 @@
 }
 
 @layer base {
-	:root,
-	:root[data-theme="light"] {
-		color-scheme: light;
-
-		/* Для того чтобы текст имел оттенок фона --fg-hue: var(--hue) и --bg-hue: var(--hue) */
-		/* Для того чтобы текст имел оттенок фона --fg-saturation: var(--saturation) и --bg-saturation: var(--saturation) */
-		
-		/*** ОСНОВНЫЕ ЦВЕТА (Базовый, фон, акценты, текст) ***/
-		/* Базовый цвет-оттенок темы */
-		--hue: 200deg; /* Общий базовый цвет-оттенок элементов темы */
-		--saturation: 10%; /* Общая базовая насыщенность элементов темы, 0% - нет оттенка цвета */
-		
-		/* Фон (background) */
-		--bg-hue: var(--hue); /* Цвет-оттенок фона */
-		--bg-saturation: var(--saturation); /* Насыщенность оттенка фона и некоторых др. элементов, 0% - нет оттенка */
-		--bg-brightness: 96%; /* Ярксть фона, 100% - абсолюнто белый */
-
-		/* Акценты */
-		--theme-accent-base: var(--bg-hue) 53% 27%; /* Основной акцентный цвет */
-		--theme-accent-one: var(--bg-hue) 53% 27%; /* Первый дополнительный акцентный цвет */
-		--theme-accent-two: 351deg 66% 48%; /* Второй дополнительный акцентный цвет */
-		
-		/* Вариант */ /* --theme-accent-two: 344deg 63% 45%; */
-		
-		/* Текст (foreground, цвет-яркость текста рассчитывается ниже на базе --theme-fg) */
-		--fg-hue: var(--hue); /* Общий цвет-оттенок для рассчета градаций цвета */
-		--fg-saturation: var(--saturation); /* Общая насыщенность для рассчета градаций цвета с оттенком, 0% - нет оттенка */
-		--fg-brightness: 9%; /* Яркость для рассчета градаций цвета с оттенком, 0% - начиная от абсолютно черного */
-		--theme-text: var(--theme-color-500); /* Цвет-яркость текста уже с адаптацией под цвет фона */ 
-
-		/*** ВТОРОСТЕПЕННЫЕ ЦВЕТА (Внешние ссылки, нейтральный акцент, цитаты) ***/
-		--theme-link: var(--hue) 97% 31%; /* Цвет внешних ссылок */
-		--theme-accent: var(--theme-color-600); /* Нейтральный акцент, рассчитывается ниже на базе --theme-fg */
-		--theme-quote: var(--theme-text); /* Цвет цитат */
-		
-		/*** ДОПОЛНИТЕЛЬНЫЕ ЦВЕТА ***/
-		--theme-lightest: var(--theme-color-350);
-		--theme-lighter: var(--theme-color-400);
-		--theme-light: var(--theme-color-450);
-		
-		/*** СПЕЦИАЛЬНЫЕ ДЛЯ КАЖДОЙ ТЕМЫ ЦВЕТА ***/
-		--theme-special-lightest: hsl(var(--hue), var(--saturation), 100%);
-		--theme-special-lighter: hsl(var(--hue), var(--saturation), 98%);
-		--theme-special-light: hsl(var(--theme-bg));
-		--theme-special: var(--theme-color-75);
-		
-		/* Подсветка синтаксиса rehype-pretty-code */
-		pre code span {
-			color: var(--shiki-light) !important;
-			font-style: var(--shiki-light-font-style) !important;
-			font-weight: var(--shiki-light-font-weight) !important;
-			text-decoration: var(--shiki-light-text-decoration) !important;
-		}
-	}
-
-	:root[data-theme="dark"] {
+	:root {
 		color-scheme: dark;
 
-		/* Для того чтобы текст имел оттенок фона --fg-hue: var(--hue) и --bg-hue: var(--hue) */
-		/* Для того чтобы текст имел оттенок фона --fg-saturation: var(--saturation) и --bg-saturation: var(--saturation) */
+		/* Aurras Music Player Dark Theme - Studio/Terminal Inspired */
 		
-		/* --theme-bg: 200deg 93% 10%; /* DeepBlue */
-		/* --theme-bg: 190deg 86% 8%; /* DeepGreen */
-		/* --theme-bg: 237deg 22% 20%; */
-		/* --theme-accent-one: 355deg 61% 88%; /* LightRose */
-		/* --theme-accent-two: 200deg 61% 71%; /* LightBlue */
-
 		/*** ОСНОВНЫЕ ЦВЕТА (Базовый, фон, акценты, текст) ***/
 		/* Базовый цвет-оттенок темы */
-		--hue: 200deg; /* Общий базовый цвет-оттенок элементов темы */
-		--saturation: 53%; /* Общая базовая насыщенность элементов темы, 0% - нет оттенка цвета */
+		--hue: 270deg; /* Consistent purple base */
+		--saturation: 30%; /* Higher saturation for rich dark visuals */
 
-		/* Фон (background) */
-		--bg-hue: var(--hue); /* Цвет-оттенок фона */
-		--bg-saturation: var(--saturation); /* Насыщенность оттенка фона и некоторых др. элементов, 0% - нет оттенка */
-		--bg-brightness: 15%; /* Ярксть фона, 0% - черный */
-		/* Вариант 204deg 51% 14% */
-		/* Вариант 210deg 25% 15% */
+		/* Фон (background) - Deep terminal/studio black */
+		--bg-hue: var(--hue);
+		--bg-saturation: var(--saturation);
+		--bg-brightness: 6%; /* Very dark background like a terminal */
 
-		/* Акценты */
-		--theme-accent-base: var(--hue) 10% 85%; 
-		--theme-accent-one: 50deg 49% 80%; /* Первый дополнительный акцентный цвет */
-		--theme-accent-two: 50deg 72% 63%; /* 50deg 72% 63% */ /* Второй дополнительный акцентный цвет (был 45deg 80% 50%) */
-		/* --theme-accent-two: 0deg 75% 89%; */
-		/* --theme-accent-base: var(--hue) 97% 71%; */
+		/* Акценты - Bright colors for dark theme contrast */
+		--theme-accent-base: 270deg 45% 80%; /* Light purple for readability */
+		--theme-accent-one: 270deg 75% 75%; /* Bright purple - main brand accent */
+		--theme-accent-two: 42deg 95% 70%; /* Bright gold - terminal/console accent */
 
 		/* Текст (foreground, цвет-яркость текста рассчитывается ниже на базе --theme-fg) */
 		--fg-hue: var(--hue); /* Общий цвет-оттенок для рассчета градаций цвета */
 		--fg-saturation: var(--saturation); /* Общая насыщенность для рассчета градаций цвета с оттенком, 0% - нет оттенка */
-		--fg-brightness: 98%; /* Яркость для рассчета градаций цвета с оттенком, 100% - начиная от абсолютно белого */
+		--fg-brightness: 95%; /* Яркость для рассчета градаций цвета с оттенком, 100% - начиная от абсолютно белого */
 		--theme-text: var(--theme-color-500); /* Цвет-яркость текста адаптированного под цвет фона */ 
 
 		/*** ВТОРОСТЕПЕННЫЕ ЦВЕТА (Внкшние ссылки, нейтральный акцент, цитаты) ***/
-		--theme-link: var(--hue) 61% 71%; /* Цвет внешних ссылок */
+		--theme-link: 270deg 70% 75%; /* Bright purple for external links in dark theme */
 		--theme-accent: var(--theme-color-600); /* Нейтральный акцент относительно текста */
 		--theme-quote: var(--theme-text); /* Цвет цитат */
 
@@ -362,4 +296,64 @@
 	article mark {
 		@apply bg-transparent;
 	}
+}
+
+/* Mobile-first responsive improvements */
+@layer base {
+  /* Prevent horizontal scrolling on mobile */
+  html {
+    overflow-x: hidden;
+  }
+  
+  /* Improve touch targets on mobile */
+  @media (max-width: 640px) {
+    button:not(.no-touch-target), 
+    a:not(.no-touch-target) {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+  
+  /* Better font scaling for very small screens */
+  @media (max-width: 320px) {
+    html {
+      font-size: 14px;
+    }
+  }
+  
+  @media (min-width: 321px) and (max-width: 640px) {
+    html {
+      font-size: 15px;
+    }
+  }
+
+  /* Fix for gradient background performance on mobile */
+  @media (max-width: 768px) {
+    [class*="blur-"] {
+      transform: translateZ(0);
+      will-change: transform;
+    }
+  }
+  
+  /* Improved scrolling on mobile */
+  body {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Better text rendering on mobile */
+  @media (max-width: 768px) {
+    * {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+  }
+  
+  /* Prevent zoom on form inputs */
+  @media (max-width: 768px) {
+    input, textarea, select {
+      font-size: 16px !important;
+    }
+  }
 }

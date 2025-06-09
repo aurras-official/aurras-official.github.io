@@ -22,12 +22,6 @@ export default {
     require("@tailwindcss/typography"),
     plugin(({ addComponents }) => {
       addComponents({
-        ".citrus-link": {
-          "&:hover": {
-            "@apply underline underline-offset-2": {},
-          },
-          "@apply no-underline": {},
-        },
         ".title": {
           "@apply font-semibold text-accent-base": {},
         },
@@ -109,7 +103,10 @@ export default {
         DEFAULT: {
           css: {
             a: {
-              "@apply citrus-link": "",
+              "&:hover": {
+                "@apply underline underline-offset-2": {},
+              },
+              "@apply no-underline": {},
             },
             blockquote: {
               // "@apply !px-4 md:!px-6 !py-2 !border-s-[0.625rem] rounded-lg border-color-100 bg-color-75": "",
@@ -280,21 +277,6 @@ export default {
                 },
               },
             },
-          },
-        },
-        citrus: {
-          css: {
-            "--tw-prose-body": theme("colors.textColor / 1"),
-            "--tw-prose-bold": theme("colors.textColor / 1"),
-            "--tw-prose-bullets": theme("colors.textColor / 1"),
-            "--tw-prose-code": theme("colors.accent / 1"),
-            "--tw-prose-headings": theme("colors.accent-base / 1"),
-            // "--tw-prose-hr": "0.5px dashed #666",
-            "--tw-prose-links": theme("colors.link / 1"),
-            "--tw-prose-quotes": theme("colors.quote / 1"),
-            // "--tw-prose-th-borders": "#666",
-            "code::before": { content: "none" },
-            "code::after": { content: "none" },
           },
         },
         sm: {

@@ -9,7 +9,7 @@ const year = new Date().getFullYear();
 >
 	<div class="me-0 font-semibold sm:me-4">
 		&copy; {siteConfig.author}
-		{year}.<span class="inline-block">&nbsp;🚀&nbsp;Astro Citrus</span>
+		{year}
 	</div>
 	<nav
 		aria-label="More on this site"
@@ -17,7 +17,10 @@ const year = new Date().getFullYear();
 	>
 		{
 			menuLinks.map((link) => (
-				<a class="underline-offset-2 hover:text-accent hover:underline" href={link.path}>
+				<a
+					class="underline-offset-2 hover:text-accent hover:underline"
+					href={link.path}
+				>
 					{link.title}
 				</a>
 			))

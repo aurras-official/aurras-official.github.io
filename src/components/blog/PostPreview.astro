@@ -25,7 +25,7 @@ const { as: Tag = "div", post, withDesc = false } = Astro.props;
 					day: "2-digit",
 				}}
 			/>
-			<Tag class="citrus-link font-medium text-accent-base sm:order-1 sm:flex-gro md:line-clamp-1">
+			<Tag class="font-medium text-accent-base sm:order-1 sm:flex-gro md:line-clamp-1 hover:underline hover:underline-offset-2 no-underline">
 				<a data-astro-prefetch href={`/posts/${post.id}/`}>
 					{post.data.draft && <span class="text-red-500">(Draft) </span>}
 					{post.data.title}
@@ -45,7 +45,7 @@ const { as: Tag = "div", post, withDesc = false } = Astro.props;
 					day: "2-digit",
 				}}
 			/>
-			<Tag class="citrus-link font-medium text-accent-base mt-2.5">
+			<Tag class="font-medium text-accent-base mt-2.5 hover:underline hover:underline-offset-2 no-underline">
 				<a data-astro-prefetch href={`/posts/${post.id}/`}>
 					{post.data.title}
 				</a>
