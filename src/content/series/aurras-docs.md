@@ -1,6 +1,6 @@
 ---
 id: aurras-docs
 title: "Aurras Documentation"
-description: "Complete guide to Aurras - the ultimate terminal music player. Learn how to install, configure, and master every feature."
+description: "Learn how to install, configure, and use Aurras - a modern terminal music player for managing your audio library from the command line."
 featured: true
 ---
