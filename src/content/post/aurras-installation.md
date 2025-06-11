@@ -2,7 +2,7 @@
 title: "Installing Aurras"
 description: "Get Aurras up and running on your system in just a few minutes. Aurras supports Linux, macOS, and Windows with multiple installation methods."
 publishDate: "2025-06-09T00:00:00Z"
-seriesId: "aurras-docs"
+seriesId: "aurras-user-docs"
 orderInSeries: 1
 tags: ["aurras", "installation", "setup", "docs"]
 draft: false
@@ -11,13 +11,6 @@ draft: false
 # Prerequisites
 
 **Python 3.12 or newer**: Aurras is built on Python 3.12+ and requires this version for proper functionality. You can download the latest version of Python from the [official Python website](https://www.python.org/).
-
-## System Requirements
-- **Python**: 3.12 or newer (required)
-- **OS**: Linux, macOS, or Windows 10+
-- **RAM**: 512 MB available memory (1GB recommended for large libraries)
-- **Storage**: 50 MB free disk space
-- **Audio**: Any audio output device
 
 # Installation Methods
 
@@ -33,10 +26,11 @@ pip install aurras
 ```
 
 ### Linux & macOS
-Install MPV first, then Aurras:
+You'll need to install MPV first, then you can install Aurras.
 
 ```bash
 # Install MPV (choose your platform)
+
 # Ubuntu/Debian
 sudo apt update && sudo apt install mpv
 
@@ -48,24 +42,39 @@ sudo dnf install mpv
 
 # macOS (via Homebrew)
 brew install mpv
+```
 
+Once MPV is installed, proceed with the Aurras installation:
+
+```bash
 # Install Aurras
 pip install aurras
 ```
 
 ## Alternative Installation Methods
 
+For users on specific operating systems, there are alternative installation methods available.
+
 ### Arch User Repository (AUR) - Arch Linux Only
+
+If you're on Arch Linux, you can use a helper like yay to install Aurras from the AUR:
+
 ```bash
 yay -S aurras
 ```
 
 ### Homebrew - macOS Only
+
+macOS users can also install Aurras directly via Homebrew:
+
 ```bash
 brew install aurras
 ```
 
 ### Chocolatey - Windows Only
+
+Windows users can use Chocolatey for a convenient installation:
+
 ```bash
 choco install aurras
 ```
@@ -182,7 +191,7 @@ aurras --help
 If you encounter issues:
 
 1. **Check the logs**: `aurras --log-level debug`
-2. **Visit our troubleshooting guide**: [Troubleshooting](/series/aurras-docs)
+2. **Visit our troubleshooting guide**: [Troubleshooting](/posts/aurras-troubleshooting)
 3. **Ask for help**: 
    - [GitHub Issues](https://github.com/vedant-asati03/Aurras/issues)
    - [Discord Community](https://discord.gg/QDJqZneMVB)
@@ -193,7 +202,10 @@ Now that Aurras is installed, you're ready to:
 
 1. **[Quick Start Guide](/posts/aurras-quick-start)** - Get playing music in 2 minutes
 2. **[Basic Usage](/posts/aurras-basic-usage)** - Learn the essential commands and controls
-3. **[Troubleshooting Guide](/posts/aurras-troubleshooting)** - Solve common issues and optimize your experience
+3. **[Configuration Guide](/posts/aurras-configuration)** - Customize Aurras to your preferences
+4. **[Troubleshooting Guide](/posts/aurras-troubleshooting)** - Solve common issues and optimize your experience
+
+**Browse the complete [User Guide Series](/series/aurras-user-docs)** for comprehensive documentation.
 
 ---
 

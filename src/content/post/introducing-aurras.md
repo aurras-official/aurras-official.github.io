@@ -2,6 +2,8 @@
 title: "Introducing Aurras: The Ultimate Terminal Music Player"
 description: "Discover how Aurras revolutionizes the way developers and music enthusiasts experience music in the terminal"
 publishDate: "2025-06-07"
+seriesId: "aurras-project"
+orderInSeries: 1
 tags: ["aurras", "music", "terminal", "player", "announcement"]
 draft: false
 ---

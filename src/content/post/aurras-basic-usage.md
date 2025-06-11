@@ -2,7 +2,7 @@
 title: "Basic Usage Guide"
 description: "Master Aurras with this comprehensive guide to the interface, controls, and essential features that make your terminal music experience exceptional."
 publishDate: "2025-06-09T00:00:00Z"
-seriesId: "aurras-docs"
+seriesId: "aurras-user-docs"
 orderInSeries: 3
 tags: ["aurras", "usage", "interface", "controls", "docs"]
 draft: false
@@ -10,36 +10,23 @@ draft: false
 
 # Interface Overview
 
-### Main Playback Interface
+## Main Playback Interface
 
 When playing music, Aurras displays a clean, informative interface:
 
-```
-🎵 Now Playing: "Bohemian Rhapsody" by Queen
-📀 Album: A Night at the Opera (1975)
-⏱️  Progress: [████████████░░░░░░░░] 3:42 / 5:55
-🔊 Volume: 85% | 🎵 Quality: 320kbps | 🎨 Theme: cyberpunk
+![Placyback Image](/public/sunset.png)
 
-💬 Real-time synced lyrics (toggle with 'l'):
-   Is this the real life?
-   Is this just fantasy?
-► Caught in a landslide
-   No escape from reality
-
-⌨️  Controls: [Space] Play/Pause | [n] Next | [b] Previous | [q] Quit
-```
-
-### Search Interface Components
+## Search Interface Components
 
 Aurras features an intelligent search system with multiple interaction modes:
 
-#### Standard Search
+### Standard Search
 Simply type your query to search for songs across YouTube and local files:
 ```
 🔍 Search: bohemian rhapsody queen
 ```
 
-#### Command Palette (Type `>`)
+### Command Palette (Type `>`)
 Access powerful commands and features:
 ```
 🔍 Search: > theme cyberpunk
@@ -47,7 +34,7 @@ Access powerful commands and features:
 🔍 Search: > settings appearance
 ```
 
-#### Options Menu (Type `?`)
+### Options Menu (Type `?`)
 Quick access to special features:
 ```
 🔍 Search: ? local
@@ -55,9 +42,9 @@ Quick access to special features:
 🔍 Search: ? disco mode
 ```
 
-## Core Interface Modes
+# Core Interface Modes
 
-### Interactive Mode (Primary Interface)
+## Interactive Mode (Primary Interface)
 
 Launch with `aurras` to enter the main interactive interface:
 
@@ -72,7 +59,7 @@ This mode provides:
 - **Smart search history** accessible with ↑/↓ arrows
 - **Live feedback** and status updates
 
-### Command-Line Mode (Direct Playback)
+## Command-Line Mode (Direct Playback)
 
 Play music instantly with direct commands:
 
@@ -82,13 +69,12 @@ aurras "Hotel California Eagles"
 
 # Use shortcuts and commands
 aurras download "Stairway to Heaven"
-aurras offline  # Play downloaded music
 aurras playlist "My Mix"
 ```
 
-## Essential Playback Controls
+# Essential Playback Controls
 
-### Primary Controls
+## Primary Controls
 ```
 Key        Action                     Description
 Space      Play/Pause                Toggle playback
@@ -102,7 +88,7 @@ t          Switch Theme              Cycle through themes
 ESC        Stop Jump Mode            Cancel number-based jumping
 ```
 
-### Advanced Jump Controls
+## Advanced Jump Controls
 
 Aurras features a powerful "Jump Mode" for precise navigation:
 
@@ -113,7 +99,7 @@ Aurras features a powerful "Jump Mode" for precise navigation:
 10n         # Jump ahead 10 tracks
 ```
 
-### Seek Controls
+## Seek Controls
 ```
 Key        Seek Amount               Use Case
 ←          5 seconds back            Fine adjustments
@@ -122,9 +108,9 @@ Shift+←    30 seconds back           Skip long intros
 Shift+→    30 seconds forward        Jump to chorus
 ```
 
-## Music Discovery & Search
+# Music Discovery & Search
 
-### Basic Search
+## Basic Search
 
 Type directly in the search bar to find music:
 
@@ -142,34 +128,34 @@ eagles hotel california
 dark side of the moon
 ```
 
-### Advanced Search Features
+## Advanced Search Features
 
-#### Smart Autocompletion
+### Smart Autocompletion
 As you type, Aurras provides intelligent suggestions:
 - Song titles with artist names
 - Popular completions based on your history
 - Contextual recommendations
 
-#### Live Recommendations
+### Live Recommendations
 Real-time suggestions appear as you type, showing:
 - Matching songs from YouTube
 - Your downloaded music
 - Popular tracks from the artist
 
-#### Search History
+### Search History
 Use arrow keys to navigate your search history:
 ```
 ↑    Previous search
 ↓    Next search
 ```
 
-## Command System
+# Command System
 
-### Core Commands & Shortcuts
+## Core Commands & Shortcuts
 
 Aurras provides both full commands and convenient shortcuts:
 
-#### Download Management
+### Download Management
 ```
 Command              Shortcut    Description
 download            d           Download current/specified song
@@ -177,7 +163,7 @@ downloadp           dp          Download entire playlist
 offline             o           Play from downloaded music
 ```
 
-#### Playlist Operations
+### Playlist Operations
 ```
 Command              Shorthand   Description
 playlist            p           Play a specific playlist
@@ -186,7 +172,7 @@ delete              de          Delete a playlist
 import              -           Import Spotify playlists
 ```
 
-#### History & Discovery
+### History & Discovery
 ```
 Command              Shorthand   Description
 history             h           Show listening history
@@ -195,7 +181,7 @@ search              -           Search by song/artist
 clear               -           Clear listening history
 ```
 
-#### System Management
+### System Management
 ```
 Command              Description
 setup               Setup Spotify integration
@@ -204,7 +190,7 @@ cleanup             Clean up cached files
 self                App management (update, uninstall, etc.)
 ```
 
-### Using Commands
+## Using Commands
 
 Type commands in the search bar:
 ```bash
@@ -221,23 +207,23 @@ v
 h
 ```
 
-## Music Sources & Integration
+# Music Sources & Integration
 
-### YouTube Integration (Primary Source)
+## YouTube Integration (Primary Source)
 - Unlimited access to millions of songs
 - High-quality audio streaming
 - Intelligent search with filters
 - Automatic quality selection
 
-### Local Music Priority
+## Local Music Priority
 - Downloaded songs play instantly
 - Gapless playback for offline tracks
 - Local files prioritized over streaming
 - Smart caching for frequently played songs
 
-### Spotify Integration
+## Spotify Integration
 
-#### Setup Process
+### Setup Process
 ```bash
 # Launch setup wizard
 aurras
@@ -252,9 +238,9 @@ Follow the OAuth flow to connect your Spotify account for:
 - Playlist importing
 - Synchronized listening history
 
-## Playlist Management
+# Playlist Management
 
-### Creating Playlists
+## Creating Playlists
 
 Playlists are created automatically when you first add songs:
 
@@ -264,9 +250,9 @@ Playlists are created automatically when you first add songs:
 playlist "My Favorites"
 ```
 
-### Managing Playlists
+## Managing Playlists
 
-#### View Playlists
+### View Playlists
 ```bash
 # List all playlists
 v
@@ -275,7 +261,7 @@ v
 view "Workout Mix"
 ```
 
-#### Download Playlists
+### Download Playlists
 ```bash
 # Download entire playlist
 dp "My Favorites"
@@ -284,7 +270,7 @@ dp "My Favorites"
 downloadp "Chill Mix" --quality 320k
 ```
 
-#### Import from Spotify
+### Import from Spotify
 ```bash
 # Import all Spotify playlists
 import
@@ -293,11 +279,11 @@ import
 import "Discover Weekly"
 ```
 
-## Download Management
+# Download Management
 
-### Downloading Music
+## Downloading Music
 
-#### Single Songs
+### Single Songs
 ```bash
 # Download currently playing song
 download
@@ -309,7 +295,7 @@ download "Imagine Dragons Believer"
 d
 ```
 
-#### Playlist Downloads
+### Playlist Downloads
 ```bash
 # Download entire playlist
 downloadp "My Mix"
@@ -318,7 +304,7 @@ downloadp "My Mix"
 downloadp "Favorites" --format flac --bitrate 320k
 ```
 
-### Offline Playback
+## Offline Playback
 
 Access your downloaded music:
 ```bash
@@ -335,9 +321,9 @@ Benefits of offline music:
 - **Higher reliability** - No network dependencies
 - **Priority playing** - Local files play first
 
-## Customization & Themes
+# Customization & Themes
 
-### Theme Switching
+## Theme Switching
 
 Aurras includes 10 built-in themes that can be switched instantly:
 
@@ -363,7 +349,7 @@ Available themes:
 - **Sunset** - Warm orange and pink tones
 - **Monochrome** - Classic black and white
 
-### Real-time Theme Changes
+## Real-time Theme Changes
 
 Switch themes without interrupting playback:
 - Press `t` to cycle through all themes
@@ -371,26 +357,26 @@ Switch themes without interrupting playback:
 - Lyrics highlighting adapts to theme colors
 - Search bar and feedback match theme style
 
-## Advanced Features
+# Advanced Features
 
-### Synced Lyrics
+## Synced Lyrics
 
 Experience lyrics that dance with your music:
 
-#### Toggle Lyrics Display
+### Toggle Lyrics Display
 ```bash
 # Show/hide lyrics
 l
 ```
 
-#### Lyrics Features
+### Lyrics Features
 - **Millisecond accuracy** - Perfect synchronization
 - **Gradient highlighting** - Current line emphasis
 - **Theme integration** - Colors match your theme
 - **Real-time updates** - Follows playback position
 - **Smart formatting** - Context lines for readability
 
-### Smart Feedback System
+## Smart Feedback System
 
 Aurras provides real-time feedback for all actions:
 - **Search suggestions** as you type
@@ -399,7 +385,7 @@ Aurras provides real-time feedback for all actions:
 - **Status updates** for downloads and operations
 - **Theme-aware styling** for visual consistency
 
-### Cache Management
+## Cache Management
 
 Monitor and manage your music cache:
 
@@ -417,9 +403,9 @@ Cache features:
 - **Size monitoring** to prevent storage overflow
 - **Download management** with duplicate detection
 
-## Tips for Effective Usage
+# Tips for Effective Usage
 
-### Search Strategies
+## Search Strategies
 
 1. **Be specific but flexible**
    ```bash
@@ -442,7 +428,7 @@ Cache features:
    - Use ↑/↓ arrows to revisit previous searches
    - Build on previous queries for similar music
 
-### Workflow Optimization
+## Workflow Optimization
 
 1. **Download frequently played songs**
    ```bash
@@ -464,16 +450,16 @@ Cache features:
    10b         # Go back 10 songs
    ```
 
-### Performance Tips
+## Performance Tips
 
 1. **Let downloads complete** for best experience
 2. **Use offline mode** for unstable connections
 3. **Regular cache cleanup** for optimal storage
 4. **Theme switching** for different moods/times
 
-## Troubleshooting Common Issues
+# Troubleshooting Common Issues
 
-### Playback Issues
+## Playback Issues
 
 **Song won't play or loads slowly:**
 1. Check internet connection
@@ -485,7 +471,7 @@ Cache features:
 2. Wait a moment for buffer to catch up
 3. Restart the song if needed
 
-### Search Problems
+## Search Problems
 
 **No results found:**
 1. Try simpler search terms
@@ -496,7 +482,7 @@ Cache features:
 1. Be more specific in search (include artist)
 2. Use unique keywords from the song title
 
-### Download Issues
+## Download Issues
 
 **Download fails:**
 1. Check internet connection
@@ -505,7 +491,7 @@ Cache features:
 
 For more detailed troubleshooting, see our [Troubleshooting Guide](/posts/aurras-troubleshooting).
 
-## What's Next?
+# What's Next?
 
 You've mastered Aurras basics! Continue your journey:
 
@@ -520,7 +506,7 @@ You've mastered Aurras basics! Continue your journey:
 - Sort by any column (Title, Artist, Album, Date)
 - Filter by file type, rating, or custom criteria
 
-##### Playlist View
+#### Playlist View
 ```
 Key     Action
 n       Create new playlist
@@ -530,7 +516,7 @@ Enter   Open playlist
 e       Edit playlist
 ```
 
-##### Queue View
+#### Queue View
 ```
 Key     Action
 d       Remove from queue
@@ -540,7 +526,7 @@ s       Shuffle queue
 Ctrl+S  Save queue as playlist
 ```
 
-##### Visualizer View
+#### Visualizer View
 ```
 Key     Action
 v       Cycle visualization modes
@@ -549,9 +535,9 @@ c       Change color scheme
 f       Toggle fullscreen visualizer
 ```
 
-## Playback Controls
+# Playback Controls
 
-### Basic Playback
+## Basic Playback
 ```
 Key           Action
 Space         Play/Pause toggle
@@ -561,7 +547,7 @@ p / ←         Previous track
 Ctrl+Space    Stop playback
 ```
 
-### Seeking & Navigation
+## Seeking & Navigation
 ```
 Key           Seek Amount
 → / l         +10 seconds
@@ -574,7 +560,7 @@ Alt+→         +5 minutes
 Alt+←         -5 minutes
 ```
 
-### Volume Control
+## Volume Control
 ```
 Key           Action
 + / =         Volume up (5%)
@@ -586,7 +572,7 @@ m             Mute toggle
 Ctrl+0        Set volume to 100%
 ```
 
-### Playback Modes
+## Playback Modes
 ```
 Key     Mode        Description
 s       Shuffle     Random track order
@@ -595,9 +581,9 @@ a       Autoplay    Continue after queue ends
 x       Crossfade   Smooth transitions between tracks
 ```
 
-## Search & Filtering
+# Search & Filtering
 
-### Basic Search
+## Basic Search
 ```
 Action                  Command
 Open search            /
@@ -610,7 +596,7 @@ Combined search        /artist:name album:title
 Clear search          Esc
 ```
 
-### Advanced Filtering
+## Advanced Filtering
 ```
 Filter Type    Syntax                  Example
 Rating         rating:>4               rating:>=3
@@ -621,7 +607,7 @@ Play count     played:>10             played:0
 File size      size:>50MB             size:<10MB
 ```
 
-### Search Examples
+## Search Examples
 ```bash
 # Find high-quality jazz tracks
 /genre:jazz type:flac
@@ -639,11 +625,11 @@ File size      size:>50MB             size:<10MB
 /genre:rock rating:>=4
 ```
 
-## Library Management
+# Library Management
 
-### Adding Music
+## Adding Music
 
-#### Scan Directories
+### Scan Directories
 ```bash
 # Scan single directory
 aurras scan ~/Music
@@ -658,7 +644,7 @@ aurras scan --recursive --follow-symlinks ~/Music
 aurras scan --update
 ```
 
-#### Import Playlists
+### Import Playlists
 ```bash
 # Import M3U playlist
 aurras import playlist.m3u
@@ -669,9 +655,9 @@ aurras import --format pls playlist.pls
 aurras import --format xspf playlist.xspf
 ```
 
-### Organizing Music
+## Organizing Music
 
-#### Ratings & Tags
+### Ratings & Tags
 ```
 Key           Action
 1-5           Set star rating (1-5 stars)
@@ -681,7 +667,7 @@ Shift+T       Remove tags
 f             Toggle favorite
 ```
 
-#### Creating Playlists
+### Creating Playlists
 ```
 Action                 Steps
 Create from selection  1. Select tracks (Space)
@@ -698,7 +684,7 @@ Smart playlist        1. Create search filter
                      3. Save as smart playlist
 ```
 
-### File Operations
+## File Operations
 ```
 Key           Action
 Del           Delete selected tracks from library
@@ -709,9 +695,9 @@ Ctrl+L        Locate file in system
 Ctrl+C        Copy file path to clipboard
 ```
 
-## Customization
+# Customization
 
-### Themes & Appearance
+## Themes & Appearance
 ```bash
 # List available themes
 aurras config themes list
@@ -724,7 +710,7 @@ aurras config set colors.accent "#ff6b6b"
 aurras config set colors.background "#1a1a1a"
 ```
 
-### Interface Layout
+## Interface Layout
 ```bash
 # Show/hide columns
 aurras config set columns.duration true
@@ -738,7 +724,7 @@ aurras config set layout.artist_width 25
 aurras config set display.time_format "mm:ss"
 ```
 
-### Behavior Settings
+## Behavior Settings
 ```bash
 # Auto-save queue on exit
 aurras config set behavior.save_queue true
@@ -750,9 +736,9 @@ aurras config set behavior.resume_playback true
 aurras config set audio.default_volume 70
 ```
 
-## Keyboard Shortcuts Reference
+# Keyboard Shortcuts Reference
 
-### Quick Reference Card
+## Quick Reference Card
 Press `?` in Aurras to see this reference:
 
 ```
@@ -769,29 +755,29 @@ e       Edit        a       Autoplay     Ctrl+R Refresh
 d       Delete      x       Crossfade    Ctrl+S Settings
 ```
 
-## Tips & Tricks
+# Tips & Tricks
 
-### Productivity Tips
+## Productivity Tips
 1. **Use search extensively** - Faster than scrolling through large libraries
 2. **Master keyboard shortcuts** - Much faster than mouse navigation
 3. **Create smart playlists** - Auto-updating based on criteria
 4. **Use queue for session planning** - Build your listening session
 5. **Rate your music** - Build better recommendations over time
 
-### Power User Features
+## Power User Features
 1. **Command chaining**: `aurras play --artist "Pink Floyd" --shuffle --volume 60`
 2. **Headless mode**: Perfect for background music in scripts
 3. **Export/import**: Backup your playlists and settings
 4. **Integration**: Control from other applications via command line
 5. **Scripting**: Automate common tasks with shell scripts
 
-### Performance Tips
+## Performance Tips
 1. **Large libraries**: Use filtering to reduce displayed tracks
 2. **Network drives**: Cache metadata locally for faster access
 3. **SSD storage**: Keep frequently played music on fast storage
 4. **Memory usage**: Adjust cache settings for your system
 
-## What's Next?
+# What's Next?
 
 You've mastered the basics! Continue your Aurras journey:
 

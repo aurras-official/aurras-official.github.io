@@ -2,7 +2,7 @@
 title: "Quick Start Guide"
 description: "Welcome to Aurras! This guide will get you playing music in your terminal in just 2 minutes."
 publishDate: "2025-06-09T00:00:00Z"
-seriesId: "aurras-docs"
+seriesId: "aurras-user-docs"
 orderInSeries: 2
 tags: ["aurras", "quick-start", "tutorial", "docs"]
 draft: false

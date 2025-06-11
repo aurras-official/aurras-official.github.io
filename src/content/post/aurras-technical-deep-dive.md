@@ -2,6 +2,8 @@
 title: "Building Aurras: Technical Deep Dive"
 description: "Explore the technical architecture and design decisions behind Aurras terminal music player"
 publishDate: "2025-06-06"
+seriesId: "aurras-dev-docs"
+orderInSeries: 1
 tags: ["aurras", "technical", "architecture", "development", "terminal"]
 draft: false
 ---
