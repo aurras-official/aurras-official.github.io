@@ -1,0 +1,115 @@
+---
+import { getCollection } from "astro:content";
+import PageLayout from "@/layouts/Base.astro";
+import { Icon } from "astro-icon/components";
+
+const allSeries = await getCollection("series");
+const allPosts = await getCollection("post");
+
+// Get series with post counts and sort by featured status
+const seriesWithData = allSeries
+    .map((series) => {
+        const postCount = allPosts.filter(
+            (post) => post.data.seriesId === series.id,
+        ).length;
+        return {
+            ...series,
+            postCount,
+        };
+    })
+    .sort((a, b) => {
+        // Featured series first, then by title
+        if (a.data.featured && !b.data.featured) return -1;
+        if (!a.data.featured && b.data.featured) return 1;
+        return a.data.title.localeCompare(b.data.title);
+    });
+
+const meta = {
+    title: "Documentation Series",
+    description:
+        "Browse all documentation series and guides for comprehensive learning paths.",
+};
+---
+
+<PageLayout meta={meta}>
+    <div class="max-w-4xl">
+        <h1 class="title mb-6 flex items-center gap-2">
+            <Icon class="h-8 w-8 text-accent-base" name="solar:notes-bold" />
+            Documentation Series
+        </h1>
+
+        <p class="text-lg mb-8 text-light">
+            Comprehensive guides and documentation organized into focused
+            learning paths. Each series contains multiple posts that build upon
+            each other.
+        </p>
+
+        <div class="grid gap-6 md:grid-cols-2">
+            {
+                seriesWithData.map((series) => (
+                    <article class="group relative overflow-hidden rounded-xl border border-special-light bg-special-light/50 p-6 transition-all hover:border-accent-base/30 hover:bg-special-light/80">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex items-center gap-2">
+                                <Icon
+                                    class="h-6 w-6 text-accent-base"
+                                    name="solar:notes-bold"
+                                />
+                                {series.data.featured && (
+                                    <div class="flex items-center gap-1 px-2 py-1 bg-accent-two/10 text-accent-two rounded-full text-xs font-medium">
+                                        <Icon
+                                            class="h-3 w-3"
+                                            name="solar:star-bold"
+                                        />
+                                        <span>Featured</span>
+                                    </div>
+                                )}
+                            </div>
+                            <span class="text-sm text-lighter">
+                                {series.postCount} post
+                                {series.postCount !== 1 ? "s" : ""}
+                            </span>
+                        </div>
+
+                        <h2 class="text-xl font-semibold text-accent-base mb-3 group-hover:text-accent-one transition-colors">
+                            <a
+                                href={`/series/${series.id}`}
+                                class="stretched-link"
+                            >
+                                {series.data.title}
+                            </a>
+                        </h2>
+
+                        <p class="text-light leading-relaxed">
+                            {series.data.description}
+                        </p>
+
+                        <div class="mt-4 flex items-center text-sm text-accent-base">
+                            <span>View series</span>
+                            <Icon
+                                class="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform"
+                                name="solar:arrow-right-line-duotone"
+                            />
+                        </div>
+                    </article>
+                ))
+            }
+        </div>
+
+        {
+            seriesWithData.length === 0 && (
+                <div class="text-center py-12">
+                    <Icon
+                        class="h-16 w-16 text-lighter mx-auto mb-4"
+                        name="solar:notes-line-duotone"
+                    />
+                    <h2 class="text-xl font-semibold text-accent-base mb-2">
+                        No series available
+                    </h2>
+                    <p class="text-light">
+                        Check back later for new documentation series.
+                    </p>
+                </div>
+            )
+        }
+    </div>
+</PageLayout>

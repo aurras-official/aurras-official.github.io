@@ -6,73 +6,131 @@ const { seriesId } = Astro.props;
 const currentPath = Astro.url.pathname;
 
 const posts = await getCollection("post");
-const series = await getCollection("series");
+const allSeries = await getCollection("series");
 
-// Находим серию по переданному `seriesId` указанному в посте
-const postsSeries = series.find((s) => s.id === seriesId);
-if (!postsSeries) {
-  	throw new Error(`Post(s) with Series ID '${seriesId}' not found.`);
-}
-// console.log("Post(s) Series:", postsSeries); // Debug. Логируем найденную серию
-
-let seriesPosts: CollectionEntry<"post">[] = [];
-if (seriesId) {
-	seriesPosts = posts
-		.filter((p) => p.data.seriesId === seriesId)
+// Create a map of series to their posts
+const seriesWithPosts = allSeries.map(series => {
+	const seriesPosts = posts
+		.filter((p) => p.data.seriesId === series.id)
 		.sort((a, b) => (a.data.orderInSeries || 0) - (b.data.orderInSeries || 0));
-}
+	
+	return {
+		series,
+		posts: seriesPosts,
+		isCurrentSeries: series.id === seriesId
+	};
+}).filter(item => item.posts.length > 0); // Only show series that have posts
+
+// Sort series by featured status and title
+seriesWithPosts.sort((a, b) => {
+	if (a.series.data.featured && !b.series.data.featured) return -1;
+	if (!a.series.data.featured && b.series.data.featured) return 1;
+	return a.series.data.title.localeCompare(b.series.data.title);
+});
 ---
 
 <aside
 	id="series-panel"
-	class="hidden grid lg:block z-40 min-h-screen fixed lg:relative `shadow-[5px_0px_10px_rgba(0,0,0,0.05)]` transition-all duration-300 ease-in-out bg-bgColor"
+	class="hidden grid lg:block z-40 min-h-screen fixed lg:relative shadow-[5px_0px_10px_rgba(0,0,0,0.05)] transition-all duration-300 ease-in-out bg-bgColor"
 >	
 	<div class="fixed -z-10 top-0 w-screen md:w-72 md:min-w-72 md:max-w-72 h-screen bg-gradient-to-b from-orange-300 via-pink-300 to-purple-300 opacity-30 dark:opacity-0">
 	</div>
 	
-	<div class="flex h-full flex-col px-8 pt-4 md:pt-8 w-screen md:w-72 md:min-w-72 md:max-w-72 bg-accent-base/5 border-r border-special-light">
-		<div class="flex gap-x-1">
-			<!--
-			<Icon aria-hidden="true" class="flex-shrink-0 h-8 w-6 py-1" focusable="false" name="solar:notes-line-duotone" />
-			-->
-			<h4 class="flex items-center title mb-[4.5rem]">
-				Docs Series panel
+	<div class="flex h-full flex-col px-6 md:px-8 pt-4 md:pt-8 w-screen md:w-72 md:min-w-72 md:max-w-72 bg-accent-base/5 border-r border-special-light">
+		<div class="flex gap-x-1 flex-shrink-0">
+			<h4 class="flex items-center title mb-4 md:mb-6">
+				All Documentation
 			</h4>
 		</div>
 		<button
 			id="close-panel"
-			class="absolute top-4 right-4 md:top-8 md:right-8 h-8 w-8 flex items-center justify-center rounded-lg bg-accent-base/5 text-accent-base hover:bg-accent-base/10"
+			class="absolute top-4 right-4 md:top-8 md:right-8 h-8 w-8 flex items-center justify-center rounded-lg bg-accent-base/5 text-accent-base hover:bg-accent-base/10 z-10"
 			aria-label="Close Series Panel"
 		>
 			<Icon class="h-6 w-6" name="hugeicons:cancel-01" />
 		</button>
-		<div class="sticky top-8">
-			{postsSeries.id ? (
-				<a 
-					href={`/series/${postsSeries.id}`} 
-					aria-label={`About ${postsSeries.data.title} series`}
-					class="sticky top-4 flex h-8 w-full items-center justify-center gap-x-1 rounded-lg shadow-lg bg-accent-base font-medium text-bgColor hover:brightness-110 transition-all duration-300"
-				>
-					<Icon class="inline-block h-6 w-6 text-bgColor" name="solar:notes-bold" />
-					{postsSeries.data.title}
-				</a>
+		
+		<div class="overflow-y-auto overflow-x-hidden flex-1 -webkit-overflow-scrolling-touch overscroll-behavior-y-contain pb-4">
+			{seriesWithPosts.map(({ series, posts, isCurrentSeries }) => (
+				<div class={`mb-6 ${isCurrentSeries ? 'border-l-2 border-accent-base pl-3' : ''}`}>
+					<!-- Series Header -->
+					<div class="mb-3">
+						<a 
+							href={`/series/${series.id}`} 
+							aria-label={`About ${series.data.title} series`}
+							class={`flex items-center gap-x-2 rounded-lg px-3 py-2 font-medium transition-all duration-300 ${
+								isCurrentSeries 
+									? 'bg-accent-base text-bgColor shadow-lg hover:brightness-110' 
+									: 'bg-accent-base/10 text-accent-base hover:bg-accent-base/20'
+							}`}
+						>
+							<Icon 
+								class={`inline-block h-5 w-5 ${isCurrentSeries ? 'text-bgColor' : 'text-accent-base'}`} 
+								name="solar:notes-bold" 
+							/>
+							<span class="text-sm font-semibold truncate">{series.data.title}</span>
+							{series.data.featured && (
+								<Icon class="h-4 w-4 text-accent-two" name="solar:star-bold" title="Featured Series" />
+							)}
+						</a>
+					</div>
 
-				<ul class="mt-[1.0625rem] text-sm font-medium text-light">
-					{seriesPosts.map((p) => {
-						const isActive = currentPath === `/posts/${p.id}/`;
-						return (
-							<li class={`px-4 flex items-center line-clamp-2 pt-1 pb-1 ${isActive ? "rounded-lg bg-color-100" : ""}`}>
-								<a
-									href={`/posts/${p.id}/`}
-									class={`hover:text-accent-two ${isActive ? "text-accent cursor-default pointer-events-none" : ""}`}
-								>
-									{p.data.title}
-								</a>
-							</li>
-						);
-					})}
-				</ul>
-			) : null}
+					<!-- Posts List -->
+					{posts.length > 0 && (
+						<ul class="space-y-1 ml-4">
+							{posts.map((post) => {
+								const isActivePost = currentPath === `/posts/${post.id}/`;
+								return (
+									<li>
+										<a
+											href={`/posts/${post.id}/`}
+											class={`block px-3 py-2 text-sm rounded-md transition-colors ${
+												isActivePost 
+													? 'bg-color-100 text-accent border-l-2 border-accent-base cursor-default pointer-events-none' 
+													: 'text-light hover:text-accent-two hover:bg-accent-base/5'
+											}`}
+										>
+											<span class="line-clamp-2">{post.data.title}</span>
+										</a>
+									</li>
+								);
+							})}
+						</ul>
+					)}
+				</div>
+			))}
 		</div>
 	</div>
 </aside>
+
+<style>
+	/* Ensure proper mobile scrolling */
+	#series-panel {
+		/* Fix for mobile touch scrolling */
+		touch-action: pan-y;
+	}
+	
+	/* Improve scrolling on mobile devices */
+	@media (max-width: 1023px) {
+		#series-panel {
+			/* Ensure full height on mobile */
+			height: 100vh;
+			height: 100dvh; /* Dynamic viewport height for mobile browsers */
+		}
+		
+		#series-panel > div:last-child {
+			/* Ensure the content container takes full height */
+			height: 100%;
+		}
+		
+		#series-panel .overflow-y-auto {
+			/* Enable momentum scrolling on iOS */
+			-webkit-overflow-scrolling: touch;
+			/* Prevent overscroll bounce affecting parent elements */
+			overscroll-behavior: contain;
+			/* Ensure scroll area is properly sized */
+			max-height: calc(100vh - 6rem);
+			max-height: calc(100dvh - 6rem);
+		}
+	}
+</style>
