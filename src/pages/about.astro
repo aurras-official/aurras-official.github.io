@@ -7,11 +7,9 @@ const meta = {
 	title: "About Aurras",
 };
 
-// High-performance data fetching with rate limit avoidance
-let githubStars = "23"; // fallback value - will be updated if API succeeds
-let totalDownloads = "1K+"; // realistic estimate based on PyPI + GitHub releases
+let githubStars = "29"; // fallback value - will be updated if API succeeds
+let totalDownloads = "3K+"; // realistic estimate based on PyPI + GitHub releases
 
-// Multiple strategies to fetch GitHub stars, avoiding rate limits
 try {
 	const controller = new AbortController();
 	const timeoutId = setTimeout(() => controller.abort(), 2000);
