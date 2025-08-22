@@ -1,0 +1,1638 @@
+---
+import PageLayout from "@/layouts/Base.astro";
+import { Icon } from "astro-icon/components";
+
+const meta = {
+	description:
+		"Meet the amazing contributors who make Aurras possible. Our community of developers, designers, and music enthusiasts drive the project forward.",
+	title: "Contributors",
+};
+
+// GitHub repository configuration
+const GITHUB_OWNER = "vedant-asati03";
+const GITHUB_REPO = "Aurras";
+
+// Cache configuration
+const CACHE_DURATION = 1000 * 60 * 15; // 15 minutes
+const CACHE_KEY = `contributors-${GITHUB_OWNER}-${GITHUB_REPO}`;
+
+// Simple in-memory cache (for build-time)
+let contributorsCache: { data: ContributorData[]; timestamp: number } | null = null;
+
+// Types for GitHub API responses
+interface GitHubContributor {
+	login: string;
+	id: number;
+	avatar_url: string;
+	html_url: string;
+	contributions: number;
+	type: string;
+}
+
+interface GitHubUser {
+	login: string;
+	name: string | null;
+	avatar_url: string;
+	bio: string | null;
+	blog: string | null;
+	company: string | null;
+	location: string | null;
+	created_at: string;
+	public_repos: number;
+	followers: number;
+	following: number;
+}
+
+interface ContributorData {
+	name: string;
+	username: string;
+	avatar: string;
+	role: string;
+	contributions: {
+		commits: number;
+		issues: number;
+		prs: number;
+		reviews: number;
+	};
+	specialties: string[];
+	joinedDate: string;
+	isCore: boolean;
+	celestialType: 'sun' | 'planet' | 'moon';
+	githubProfile?: GitHubUser;
+}
+
+// Function to determine celestial type based on contributions
+function getCelestialType(commits: number): 'sun' | 'planet' | 'moon' {
+	if (commits >= 100) return 'sun';
+	if (commits >= 20) return 'planet';
+	return 'moon';
+}
+
+// Function to determine role based on contributions and profile
+function determineRole(contributor: GitHubContributor, profile?: GitHubUser): string {
+	const { contributions, login } = contributor;
+	
+	// Owner/Creator
+	if (login === GITHUB_OWNER) {
+		return "Creator & Lead Developer";
+	}
+	
+	// High contributors
+	if (contributions >= 100) {
+		return "Core Developer";
+	}
+	
+	// Medium contributors
+	if (contributions >= 20) {
+		return profile?.company ? "Senior Developer" : "Feature Developer";
+	}
+	
+	// Based on profile info if available
+	if (profile?.bio) {
+		const bio = profile.bio.toLowerCase();
+		if (bio.includes('design') || bio.includes('ui') || bio.includes('ux')) {
+			return "UI/UX Contributor";
+		}
+		if (bio.includes('doc') || bio.includes('writer') || bio.includes('technical writing')) {
+			return "Documentation Contributor";
+		}
+		if (bio.includes('test') || bio.includes('qa') || bio.includes('quality')) {
+			return "QA Contributor";
+		}
+	}
+	
+	// Default roles based on contribution level
+	if (contributions >= 10) return "Active Contributor";
+	if (contributions >= 5) return "Regular Contributor";
+	return "Community Contributor";
+}
+
+// Function to determine specialties based on profile and contributions
+function determineSpecialties(contributor: GitHubContributor, profile?: GitHubUser): string[] {
+	const { login, contributions } = contributor;
+	const specialties: string[] = [];
+	
+	// Owner gets core specialties
+	if (login === GITHUB_OWNER) {
+		return ["Core Architecture", "Audio Processing", "UI/UX", "Project Leadership"];
+	}
+	
+	// Based on contribution level
+	if (contributions >= 50) {
+		specialties.push("Core Development");
+	}
+	
+	if (contributions >= 20) {
+		specialties.push("Feature Development");
+	}
+	
+	// Based on profile
+	if (profile?.bio) {
+		const bio = profile.bio.toLowerCase();
+		if (bio.includes('frontend') || bio.includes('ui') || bio.includes('react') || bio.includes('vue')) {
+			specialties.push("Frontend");
+		}
+		if (bio.includes('backend') || bio.includes('api') || bio.includes('server') || bio.includes('node')) {
+			specialties.push("Backend");
+		}
+		if (bio.includes('design') || bio.includes('ux')) {
+			specialties.push("Design");
+		}
+		if (bio.includes('mobile') || bio.includes('android') || bio.includes('ios')) {
+			specialties.push("Mobile");
+		}
+		if (bio.includes('devops') || bio.includes('docker') || bio.includes('kubernetes')) {
+			specialties.push("DevOps");
+		}
+	}
+	
+	// Default specialties if none found
+	if (specialties.length === 0) {
+		if (contributions >= 20) {
+			specialties.push("Code Contributions", "Bug Fixes");
+		} else if (contributions >= 5) {
+			specialties.push("Bug Reports", "Testing");
+		} else {
+			specialties.push("Community Support");
+		}
+	}
+	
+	return specialties.slice(0, 3); // Limit to 3 specialties
+}
+
+// Fetch contributors from GitHub API
+async function fetchContributors(): Promise<ContributorData[]> {
+	// Check cache first
+	if (contributorsCache && (Date.now() - contributorsCache.timestamp) < CACHE_DURATION) {
+		console.log('Using cached contributor data');
+		return contributorsCache.data;
+	}
+
+	try {
+		// Prepare headers with optional authentication
+		const headers: Record<string, string> = {
+			'Accept': 'application/vnd.github.v3+json',
+			'User-Agent': 'Aurras-Website'
+		};
+		
+		// Add GitHub token if available (for higher rate limits)
+		const githubToken = import.meta.env.GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+		if (githubToken) {
+			headers['Authorization'] = `token ${githubToken}`;
+		}
+
+		// Fetch contributors from GitHub API
+		const contributorsResponse = await fetch(
+			`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contributors?per_page=50`,
+			{ headers }
+		);
+
+		if (!contributorsResponse.ok) {
+			console.warn(`GitHub API error: ${contributorsResponse.status} - ${contributorsResponse.statusText}`);
+			if (contributorsResponse.status === 403) {
+				console.warn('GitHub API rate limit exceeded. Consider adding a GITHUB_TOKEN environment variable for higher rate limits.');
+			}
+			throw new Error(`GitHub API error: ${contributorsResponse.status}`);
+		}
+
+		const githubContributors: GitHubContributor[] = await contributorsResponse.json();
+		
+		// Fetch detailed profile for each contributor with rate limiting
+		const contributorsWithProfiles = await Promise.all(
+			githubContributors.map(async (contributor, index) => {
+				try {
+					// Add small delay to avoid hitting rate limits too quickly
+					if (index > 0) {
+						await new Promise(resolve => setTimeout(resolve, 100));
+					}
+					
+					const profileResponse = await fetch(
+						`https://api.github.com/users/${contributor.login}`,
+						{ headers }
+					);
+					
+					const profile: GitHubUser | null = profileResponse.ok ? await profileResponse.json() : null;
+					
+					// Log profile fetch status for debugging
+					if (!profileResponse.ok) {
+						console.warn(`Failed to fetch profile for ${contributor.login}: ${profileResponse.status}`);
+					}
+					
+					const contributorData: ContributorData = {
+						name: profile?.name || contributor.login,
+						username: contributor.login,
+						avatar: contributor.avatar_url,
+						role: determineRole(contributor, profile || undefined),
+						contributions: {
+							commits: contributor.contributions,
+							issues: 0, // GitHub API doesn't provide this easily
+							prs: 0,    // Would need separate API call
+							reviews: 0 // Would need separate API call
+						},
+						specialties: determineSpecialties(contributor, profile || undefined),
+						joinedDate: profile?.created_at || new Date().toISOString(),
+						isCore: contributor.contributions >= 50 || contributor.login === GITHUB_OWNER,
+						celestialType: getCelestialType(contributor.contributions)
+					};
+					
+					// Add githubProfile only if it exists
+					if (profile) {
+						contributorData.githubProfile = profile;
+					}
+					
+					return contributorData;
+				} catch (error) {
+					console.warn(`Failed to fetch profile for ${contributor.login}:`, error);
+					
+					// Fallback contributor data
+					return {
+						name: contributor.login,
+						username: contributor.login,
+						avatar: contributor.avatar_url,
+						role: determineRole(contributor),
+						contributions: {
+							commits: contributor.contributions,
+							issues: 0,
+							prs: 0,
+							reviews: 0
+						},
+						specialties: determineSpecialties(contributor),
+						joinedDate: new Date().toISOString(),
+						isCore: contributor.contributions >= 50 || contributor.login === GITHUB_OWNER,
+						celestialType: getCelestialType(contributor.contributions)
+					};
+				}
+			})
+		);
+
+		// Update cache
+		contributorsCache = {
+			data: contributorsWithProfiles,
+			timestamp: Date.now()
+		};
+
+		console.log(`Fetched and cached ${contributorsWithProfiles.length} contributors from GitHub`);
+		return contributorsWithProfiles;
+		
+	} catch (error) {
+		console.error('Failed to fetch contributors from GitHub:', error);
+		console.log('Falling back to hardcoded contributor data...');
+		
+		// Enhanced fallback data with more realistic contributors
+		return [
+			{
+				name: "Vedant Asati",
+				username: "vedant-asati03",
+				avatar: "https://github.com/vedant-asati03.png",
+				role: "Creator & Lead Developer",
+				contributions: {
+					commits: 150,
+					issues: 8,
+					prs: 12,
+					reviews: 5
+				},
+				specialties: ["Core Architecture", "Audio Processing", "UI/UX"],
+				joinedDate: "2024-01-15",
+				isCore: true,
+				celestialType: "sun"
+			},
+			{
+				name: "Community Contributor",
+				username: "community-helper",
+				avatar: "https://github.com/github.png",
+				role: "Community Contributor",
+				contributions: {
+					commits: 5,
+					issues: 2,
+					prs: 3,
+					reviews: 1
+				},
+				specialties: ["Bug Reports", "Testing"],
+				joinedDate: "2024-02-01",
+				isCore: false,
+				celestialType: "moon"
+			}
+		];
+	}
+}
+
+// Fetch contributors data
+const contributors = await fetchContributors();
+
+const totalContributors = contributors.length;
+const totalCommits = contributors.reduce((sum, c) => sum + c.contributions.commits, 0);
+const totalIssues = contributors.reduce((sum, c) => sum + c.contributions.issues, 0);
+const totalPRs = contributors.reduce((sum, c) => sum + c.contributions.prs, 0);
+
+// Additional GitHub-derived stats
+const coreContributors = contributors.filter(c => c.isCore).length;
+const sunContributors = contributors.filter(c => c.celestialType === 'sun').length;
+const planetContributors = contributors.filter(c => c.celestialType === 'planet').length;
+const moonContributors = contributors.filter(c => c.celestialType === 'moon').length;
+---
+
+<PageLayout meta={meta}>
+	<h1 class="title mb-6 text-center flex items-center justify-center">
+		<Icon class="h-8 w-8 text-accent-base mr-3" name="solar:users-group-rounded-bold" />
+		Contributors
+	</h1>
+
+	<div class="max-w-none">
+		<div class="text-center mb-12">
+			<p class="text-base sm:text-lg mb-8 text-light">
+				Meet the amazing people who make Aurras possible. Our community of developers, 
+				designers, and music enthusiasts collaborate to create the ultimate terminal music experience.
+			</p>
+		</div>
+
+		<!-- Interactive Contribution Galaxy -->
+		<div class="mb-16">
+			<h2 class="title text-3xl font-bold mb-8 text-center">
+				Contribution Galaxy
+			</h2>
+			<p class="text-base sm:text-lg text-center mb-8 text-light">
+				Explore our contributor constellation. Each celestial body represents a team member, 
+				floating through space with their unique contribution energy.
+			</p>
+
+			<!-- Live Data Notice -->
+			<!-- <div class="text-center mb-8">
+				<div class="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-sm">
+					<div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+					Live data from GitHub • Updated automatically
+				</div>
+			</div> -->
+
+			<!-- Celestial Categories Legend -->
+			<div class="flex justify-center mb-8 px-2">
+				<div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-8 p-4 rounded-lg bg-black/30 backdrop-blur w-full max-w-2xl">
+					<div class="flex items-center gap-2">
+						<div class="w-6 h-6 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 relative">
+							<div class="absolute inset-0 rounded-full animate-pulse bg-yellow-300/50"></div>
+						</div>
+						<span class="text-sm text-light">
+							<span class="text-yellow-400 font-semibold">Suns</span> (100+ commits)
+						</span>
+					</div>
+					<div class="flex items-center gap-2">
+						<div class="w-5 h-5 rounded-full bg-gradient-to-r from-blue-400 to-purple-500"></div>
+						<span class="text-sm text-light">
+							<span class="text-blue-400 font-semibold">Planets</span> (20-99 commits)
+						</span>
+					</div>
+					<div class="flex items-center gap-2">
+						<div class="w-4 h-4 rounded-full bg-gradient-to-r from-gray-300 to-gray-500"></div>
+						<span class="text-sm text-light">
+							<span class="text-gray-300 font-semibold">Moons</span> (1-19 commits)
+						</span>
+					</div>
+				</div>
+			</div>
+			<div class="galaxy-container relative rounded-xl overflow-hidden" style="height: 600px;">
+				<!-- Animated Background -->
+				<div class="absolute inset-0 galaxy-bg"></div>
+				
+				<!-- Floating Particles -->
+				<div class="particles-container absolute inset-0">
+					{Array.from({ length: 50 }, (_, i) => (
+						<div 
+							class="particle"
+							style={`
+								left: ${Math.random() * 100}%;
+								top: ${Math.random() * 100}%;
+								animation-delay: ${Math.random() * 10}s;
+								animation-duration: ${3 + Math.random() * 4}s;
+							`}
+						></div>
+					))}
+				</div>
+
+				<!-- Connection Lines -->
+				<svg class="absolute inset-0 w-full h-full pointer-events-none" id="connection-lines">
+					<!-- Lines will be dynamically drawn here -->
+				</svg>
+
+				<!-- Floating Contributors -->
+				<div class="relative z-10 h-full flex items-center justify-center">
+					{(() => {
+						// Create a proper celestial system with realistic orbits
+						const suns = contributors.filter(c => c.celestialType === 'sun');
+						const planets = contributors.filter(c => c.celestialType === 'planet');
+						const moons = contributors.filter(c => c.celestialType === 'moon');
+						
+						const celestialBodies: any[] = [];
+						const containerCenter = { x: 300, y: 300 }; // Center of 600px container
+						
+						// Place suns first (stationary at center)
+						suns.forEach((sun, sunIndex) => {
+							// Multiple suns get slight offset from center
+							const offsetAngle = (sunIndex * 360) / suns.length;
+							const offsetRadius = suns.length > 1 ? 40 : 0;
+							const x = containerCenter.x + Math.cos(offsetAngle * Math.PI / 180) * offsetRadius;
+							const y = containerCenter.y + Math.sin(offsetAngle * Math.PI / 180) * offsetRadius;
+							
+							celestialBodies.push({
+								contributor: sun,
+								celestialClass: 'celestial-sun',
+								orbitRadius: 0,
+								isStationary: true,
+								position: { x, y },
+								orbitCenter: { x, y }
+							});
+						});
+						
+						// Place planets orbiting around suns
+						planets.forEach((planet, planetIndex) => {
+							// Safe access to parent sun with null checking
+							const sunIndex = planetIndex % suns.length;
+							const parentSun = suns.length > 0 ? suns[sunIndex] : null;
+							
+							// If we have a valid parent sun, use its position as orbit center
+							let parentCenter = containerCenter;
+							if (parentSun) {
+								const parentIndex = celestialBodies.findIndex(body => body.contributor === parentSun);
+								if (parentIndex >= 0) {
+									parentCenter = celestialBodies[parentIndex].orbitCenter || containerCenter;
+								}
+							}
+							
+							const orbitRadius = 80 + (planetIndex * 25);
+							
+							celestialBodies.push({
+								contributor: planet,
+								celestialClass: 'celestial-planet',
+								orbitRadius,
+								parentType: 'sun',
+								orbitCenter: parentCenter,
+								isStationary: false
+							});
+						});
+						
+						// Place moons orbiting around planets (or suns if no planets)
+						moons.forEach((moon, moonIndex) => {
+							if (planets.length > 0) {
+								// Orbit around planets
+								const planetIndex = moonIndex % planets.length;
+								const parentPlanet = planets[planetIndex];
+								
+								// Find the parent planet in celestial bodies
+								let parentCenter = containerCenter;
+								if (parentPlanet) {
+									const parentPlanetIndex = celestialBodies.findIndex(b => 
+										b.contributor && b.contributor === parentPlanet
+									);
+									if (parentPlanetIndex >= 0) {
+										parentCenter = celestialBodies[parentPlanetIndex]?.orbitCenter || containerCenter;
+									}
+								}
+								
+								const orbitRadius = 35 + (moonIndex % 3) * 15; // Closer orbit around planets
+								
+								celestialBodies.push({
+									contributor: moon,
+									celestialClass: 'celestial-moon',
+									orbitRadius,
+									parentType: 'planet',
+									orbitCenter: parentCenter,
+									isStationary: false
+								});
+							} else if (suns.length > 0) {
+								// Orbit around suns if no planets
+								const sunIndex = moonIndex % suns.length;
+								const parentSun = suns[sunIndex];
+								
+								// Find the parent sun in celestial bodies
+								let parentCenter = containerCenter;
+								if (parentSun) {
+									const parentSunIndex = celestialBodies.findIndex(b => 
+										b.contributor && b.contributor === parentSun
+									);
+									if (parentSunIndex >= 0) {
+										parentCenter = celestialBodies[parentSunIndex]?.orbitCenter || containerCenter;
+									}
+								}
+								
+								const orbitRadius = 100 + (moonIndex * 20);
+								
+								celestialBodies.push({
+									contributor: moon,
+									celestialClass: 'celestial-moon',
+									orbitRadius,
+									parentType: 'sun',
+									orbitCenter: parentCenter,
+									isStationary: false
+								});
+							} else {
+								// Fallback to center if no suns or planets
+								celestialBodies.push({
+									contributor: moon,
+									celestialClass: 'celestial-moon',
+									orbitRadius: 60 + (moonIndex * 20),
+									parentType: 'none',
+									orbitCenter: containerCenter,
+									isStationary: false
+								});
+							}
+						});
+						
+						return celestialBodies;
+					})().map((body, index) => {
+						const { contributor, celestialClass, orbitRadius, isStationary, position, orbitCenter } = body;
+						
+						// Calculate positioning
+						let positionStyle = '';
+						if (isStationary && position) {
+							// Stationary suns at their assigned position
+							positionStyle = `left: ${position.x - 45}px; top: ${position.y - 45}px;`;
+						} else if (orbitCenter) {
+							// Orbiting bodies - positioned at their orbit center, CSS animation handles the actual orbit
+							positionStyle = `left: ${orbitCenter.x - 35}px; top: ${orbitCenter.y - 35}px;`;
+						} else {
+							// Fallback to center
+							positionStyle = 'left: calc(50% - 40px); top: calc(50% - 40px);';
+						}
+						
+						return (
+							<div 
+								class={`floating-contributor ${celestialClass}`}
+								style={`
+									${positionStyle}
+									animation-delay: ${index * 0.3}s;
+									--orbit-radius: ${orbitRadius}px;
+									--orbit-center-x: ${orbitCenter?.x || 300}px;
+									--orbit-center-y: ${orbitCenter?.y || 300}px;
+								`}
+								data-contributor-id={index}
+								data-commits={contributor.contributions.commits}
+								data-orbit-radius={orbitRadius}
+								data-celestial-type={contributor.celestialType}
+							>
+								<!-- Glowing Orb -->
+								<div class="contributor-orb">
+									<div class="orb-glow"></div>
+									<div class="orb-core">
+										<img 
+											src={contributor.avatar} 
+											alt={contributor.name}
+											class="avatar-img"
+										/>
+									</div>
+									{contributor.isCore && (
+										<div class="core-ring"></div>
+									)}
+								</div>
+
+								<!-- Floating Info Card -->
+								<div class="contributor-card">
+									<div class="card-content">
+										<div class="flex items-center gap-3 mb-3">
+											<img 
+												src={contributor.avatar} 
+												alt={contributor.name}
+												class="w-12 h-12 rounded-full border-2 border-accent-base/50"
+											/>
+											<div>
+												<h3 class="text-lg font-bold text-accent-base">{contributor.name}</h3>
+												<p class="text-sm text-accent-two">@{contributor.username}</p>
+											</div>
+											<div class="ml-auto flex gap-2">
+												<!-- Celestial Type Badge -->
+												{contributor.celestialType === 'sun' && (
+													<div class="px-2 py-1 bg-yellow-400/20 text-yellow-400 rounded-full text-xs font-medium flex items-center gap-1">
+														<Icon class="h-3 w-3" name="solar:sun-bold" />
+														Sun
+													</div>
+												)}
+												{contributor.celestialType === 'planet' && (
+													<div class="px-2 py-1 bg-blue-400/20 text-blue-400 rounded-full text-xs font-medium flex items-center gap-1">
+														<Icon class="h-3 w-3" name="solar:planet-bold" />
+														Planet
+													</div>
+												)}
+												{contributor.celestialType === 'moon' && (
+													<div class="px-2 py-1 bg-gray-300/20 text-gray-300 rounded-full text-xs font-medium flex items-center gap-1">
+														<Icon class="h-3 w-3" name="solar:moon-bold" />
+														Moon
+													</div>
+												)}
+												{contributor.isCore && (
+													<div class="px-2 py-1 bg-accent-one/20 text-accent-one rounded-full text-xs font-medium flex items-center gap-1">
+														<Icon class="h-3 w-3" name="solar:star-bold" />
+														Core
+													</div>
+												)}
+											</div>
+										</div>
+
+										<p class="text-sm text-light mb-3">{contributor.role}</p>
+
+										<!-- Contribution Stats with animated bars -->
+										<div class="space-y-2 mb-3">
+											<div class="stat-bar">
+												<span class="text-xs text-light">Commits</span>
+												<div class="bar-container">
+													<div 
+														class="bar-fill commits-bar"
+														style={`width: ${(contributor.contributions.commits / Math.max(...contributors.map(c => c.contributions.commits))) * 100}%`}
+													></div>
+													<span class="text-xs font-medium text-accent-one">{contributor.contributions.commits}</span>
+												</div>
+											</div>
+											{contributor.githubProfile && (
+												<div class="stat-bar">
+													<span class="text-xs text-light">Repos</span>
+													<div class="bar-container">
+														<div 
+															class="bar-fill prs-bar"
+															style={`width: ${Math.min((contributor.githubProfile.public_repos / 50) * 100, 100)}%`}
+														></div>
+														<span class="text-xs font-medium text-accent-two">{contributor.githubProfile.public_repos}</span>
+													</div>
+												</div>
+											)}
+										</div>
+
+										<!-- GitHub Profile Info -->
+										{contributor.githubProfile?.bio && (
+											<div class="mb-3">
+												<p class="text-xs text-light italic">"{contributor.githubProfile.bio}"</p>
+											</div>
+										)}
+
+										{contributor.githubProfile?.location && (
+											<div class="mb-3">
+												<span class="text-xs text-light flex items-center gap-1">
+													<Icon class="h-3 w-3" name="solar:map-point-bold" />
+													{contributor.githubProfile.location}
+												</span>
+											</div>
+										)}
+
+										<!-- Specialties -->
+										<div class="mb-3">
+											<div class="flex flex-wrap gap-1">
+												{contributor.specialties.slice(0, 2).map((specialty: string) => (
+													<span class="px-2 py-1 text-xs rounded-full bg-accent-base/10 text-accent-base">
+														{specialty}
+													</span>
+												))}
+											</div>
+										</div>						<!-- GitHub Link -->
+						<a 
+							href={`https://github.com/${contributor.username}`}
+							class="flex items-center gap-2 text-accent-base hover:text-accent-one transition-colors text-sm"
+							target="_blank"
+							rel="noopener noreferrer"
+						>
+							<Icon class="w-4 h-4" name="solar:link-bold" />
+							View GitHub Profile
+						</a>
+
+						<!-- Member since -->
+						{contributor.githubProfile?.created_at && (
+							<div class="mt-2 pt-2 border-t border-white/10">
+								<span class="text-xs text-light">
+									GitHub member since {new Date(contributor.githubProfile.created_at).getFullYear()}
+								</span>
+							</div>
+						)}
+									</div>
+								</div>
+
+								<!-- Contribution Particles -->
+								<div class="contribution-particles">
+									{Array.from({ length: contributor.contributions.commits > 50 ? 8 : 4 }, (_, i) => (
+										<div 
+											class="contrib-particle"
+											style={`animation-delay: ${i * 0.3}s`}
+										></div>
+									))}
+								</div>
+							</div>
+						);
+					})}
+				</div>
+
+			</div>
+		</div>
+
+		<!-- How to Contribute Section -->
+		<div class="p-6 sm:p-8 text-center rounded-lg bg-gradient-to-r from-accent-one/10 to-accent-two/10 border border-accent-one/20">
+			<h2 class="text-2xl sm:text-3xl font-bold mb-4">
+				Join Our Symphony
+			</h2>
+			<p class="text-base sm:text-lg mb-6">
+				Ready to contribute to Aurras? Whether you're a developer, designer, or music enthusiast, 
+				there's a place for you in our community.
+			</p>
+			<div class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+				<a 
+					href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`} 
+					class="inline-flex items-center px-6 py-3 rounded-lg bg-gradient-to-r from-accent-one to-accent-two text-bgColor font-semibold hover:brightness-110 transition-all text-sm sm:text-base"
+					target="_blank"
+					rel="noopener noreferrer"
+				>
+					<Icon class="w-5 h-5 mr-2" name="solar:code-bold" />
+					View on GitHub
+				</a>
+				<a 
+					href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/blob/main/CONTRIBUTING.md`} 
+					class="inline-flex items-center px-6 py-3 rounded-lg border border-accent-one text-accent-one hover:bg-accent-one/10 transition-all text-sm sm:text-base"
+					target="_blank"
+					rel="noopener noreferrer"
+				>
+					<Icon class="w-5 h-5 mr-2" name="solar:document-text-bold" />
+					Contributing Guide
+				</a>
+			</div>
+		</div>
+	</div>
+</PageLayout>
+
+<style>
+	/* Galaxy Container */
+	.galaxy-container {
+		background: radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 35%, #0f172a 100%);
+		border: 1px solid rgba(139, 92, 246, 0.3);
+		position: relative;
+		overflow: hidden;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	/* Animated Background */
+	.galaxy-bg {
+		background: 
+			radial-gradient(2px 2px at 20px 30px, rgba(139, 92, 246, 0.8), transparent),
+			radial-gradient(2px 2px at 40px 70px, rgba(59, 130, 246, 0.6), transparent),
+			radial-gradient(1px 1px at 90px 40px, rgba(34, 197, 94, 0.4), transparent),
+			radial-gradient(1px 1px at 130px 80px, rgba(251, 191, 36, 0.3), transparent),
+			radial-gradient(2px 2px at 160px 30px, rgba(236, 72, 153, 0.5), transparent);
+		background-repeat: repeat;
+		background-size: 200px 100px;
+		animation: twinkle 8s ease-in-out infinite alternate;
+	}
+
+	@keyframes twinkle {
+		0% { opacity: 0.3; }
+		50% { opacity: 0.8; }
+		100% { opacity: 0.5; }
+	}
+
+	/* Floating Particles */
+	.particle {
+		position: absolute;
+		width: 2px;
+		height: 2px;
+		background: radial-gradient(circle, rgba(139, 92, 246, 0.8) 0%, transparent 70%);
+		border-radius: 50%;
+		animation: float infinite linear;
+		pointer-events: none;
+	}
+
+	@keyframes float {
+		0% {
+			transform: translateY(0px) rotate(0deg);
+			opacity: 0;
+		}
+		10% {
+			opacity: 1;
+		}
+		90% {
+			opacity: 1;
+		}
+		100% {
+			transform: translateY(-600px) rotate(360deg);
+			opacity: 0;
+		}
+	}
+
+	/* Floating Contributors */
+	.floating-contributor {
+		position: absolute;
+		cursor: pointer;
+		z-index: 10;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	/* Celestial Type Specific Styles with realistic orbital mechanics */
+	.celestial-sun {
+		animation: gentle-float 8s ease-in-out infinite alternate, sun-pulse 4s ease-in-out infinite;
+		position: absolute;
+	}
+
+	.celestial-planet {
+		animation: planet-orbit 40s infinite linear, gentle-float 6s ease-in-out infinite alternate;
+		position: absolute;
+		transform-origin: center center;
+	}
+
+	.celestial-moon {
+		animation: moon-orbit 20s infinite linear, gentle-float 4s ease-in-out infinite alternate;
+		position: absolute;
+		transform-origin: center center;
+	}
+
+	/* Sun Animations - Gentle floating and pulsing */
+	@keyframes sun-pulse {
+		0%, 100% { transform: scale(1); }
+		50% { transform: scale(1.05); }
+	}
+
+	/* Planet Animations - Orbit around their assigned sun */
+	@keyframes planet-orbit {
+		0% { 
+			transform: rotate(0deg) translateX(var(--orbit-radius, 80px)) rotate(0deg);
+		}
+		100% { 
+			transform: rotate(360deg) translateX(var(--orbit-radius, 80px)) rotate(-360deg);
+		}
+	}
+
+	/* Moon Animations - Faster orbit around their assigned planet/sun */
+	@keyframes moon-orbit {
+		0% { 
+			transform: rotate(0deg) translateX(var(--orbit-radius, 40px)) rotate(0deg);
+		}
+		100% { 
+			transform: rotate(360deg) translateX(var(--orbit-radius, 40px)) rotate(-360deg);
+		}
+	}
+
+	/* Gentle floating animation for all bodies */
+	@keyframes gentle-float {
+		0%, 100% { 
+			transform: translateY(0px); 
+		}
+		50% { 
+			transform: translateY(-10px); 
+		}
+	}
+
+	/* Override floating animation for orbiting bodies to work with orbital transforms */
+	.celestial-planet {
+		animation: planet-orbit 40s infinite linear;
+	}
+
+	.celestial-moon {
+		animation: moon-orbit 20s infinite linear;
+	}
+
+	/* Contributor Orb */
+	.contributor-orb {
+		position: relative;
+		width: 60px;
+		height: 60px;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	/* Celestial Type Specific Orb Sizes */
+	.celestial-sun .contributor-orb {
+		width: 90px;
+		height: 90px;
+	}
+
+	.celestial-planet .contributor-orb {
+		width: 70px;
+		height: 70px;
+	}
+
+	.celestial-moon .contributor-orb {
+		width: 50px;
+		height: 50px;
+	}
+
+	.floating-contributor.large .contributor-orb {
+		width: 80px;
+		height: 80px;
+	}
+
+	.orb-glow {
+		position: absolute;
+		inset: -8px;
+		background: radial-gradient(circle, rgba(139, 92, 246, 0.6) 0%, rgba(139, 92, 246, 0.2) 40%, transparent 70%);
+		border-radius: 50%;
+		animation: pulse-glow 3s ease-in-out infinite;
+		filter: blur(4px);
+	}
+
+	/* Celestial Type Specific Glows */
+	.celestial-sun .orb-glow {
+		background: radial-gradient(circle, rgba(251, 191, 36, 0.9) 0%, rgba(249, 115, 22, 0.6) 40%, transparent 70%);
+		animation: pulse-sun 2s ease-in-out infinite;
+		filter: blur(6px);
+		inset: -12px;
+	}
+
+	.celestial-planet .orb-glow {
+		background: radial-gradient(circle, rgba(59, 130, 246, 0.8) 0%, rgba(139, 92, 246, 0.4) 40%, transparent 70%);
+		animation: pulse-planet 3s ease-in-out infinite;
+		filter: blur(5px);
+		inset: -10px;
+	}
+
+	.celestial-moon .orb-glow {
+		background: radial-gradient(circle, rgba(156, 163, 175, 0.6) 0%, rgba(107, 114, 128, 0.3) 40%, transparent 70%);
+		animation: pulse-moon 4s ease-in-out infinite;
+		filter: blur(3px);
+		inset: -6px;
+	}
+
+	@keyframes pulse-sun {
+		0%, 100% { transform: scale(1); opacity: 0.9; }
+		50% { transform: scale(1.3); opacity: 1; }
+	}
+
+	@keyframes pulse-planet {
+		0%, 100% { transform: scale(1); opacity: 0.7; }
+		50% { transform: scale(1.2); opacity: 0.9; }
+	}
+
+	@keyframes pulse-moon {
+		0%, 100% { transform: scale(1); opacity: 0.5; }
+		50% { transform: scale(1.1); opacity: 0.7; }
+	}
+
+	.floating-contributor.large .orb-glow {
+		background: radial-gradient(circle, rgba(251, 191, 36, 0.8) 0%, rgba(251, 191, 36, 0.3) 40%, transparent 70%);
+	}
+
+	@keyframes pulse-glow {
+		0%, 100% { transform: scale(1); opacity: 0.6; }
+		50% { transform: scale(1.2); opacity: 1; }
+	}
+
+	.orb-core {
+		position: absolute;
+		inset: 4px;
+		background: linear-gradient(135deg, rgba(139, 92, 246, 0.8), rgba(59, 130, 246, 0.8));
+		border-radius: 50%;
+		padding: 4px;
+		backdrop-filter: blur(10px);
+		border: 2px solid rgba(255, 255, 255, 0.2);
+		overflow: hidden;
+	}
+
+	/* Celestial Type Specific Core Styles */
+	.celestial-sun .orb-core {
+		background: linear-gradient(135deg, rgba(251, 191, 36, 1), rgba(249, 115, 22, 0.9));
+		border: 3px solid rgba(255, 255, 255, 0.4);
+		box-shadow: inset 0 0 20px rgba(251, 191, 36, 0.3);
+	}
+
+	.celestial-planet .orb-core {
+		background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(139, 92, 246, 0.8));
+		border: 2px solid rgba(255, 255, 255, 0.3);
+		box-shadow: inset 0 0 15px rgba(59, 130, 246, 0.2);
+	}
+
+	.celestial-moon .orb-core {
+		background: linear-gradient(135deg, rgba(156, 163, 175, 0.8), rgba(107, 114, 128, 0.7));
+		border: 2px solid rgba(255, 255, 255, 0.2);
+		box-shadow: inset 0 0 10px rgba(156, 163, 175, 0.1);
+	}
+
+	.floating-contributor.large .orb-core {
+		background: linear-gradient(135deg, rgba(251, 191, 36, 0.9), rgba(249, 115, 22, 0.8));
+		border: 3px solid rgba(255, 255, 255, 0.3);
+	}
+
+	.avatar-img {
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+		object-fit: cover;
+		transition: transform 0.3s ease;
+	}
+
+	.core-ring {
+		position: absolute;
+		inset: -6px;
+		border: 2px solid rgba(251, 191, 36, 0.6);
+		border-radius: 50%;
+		animation: rotate-ring 10s linear infinite;
+	}
+
+	.core-ring::before {
+		content: '';
+		position: absolute;
+		top: -4px;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 8px;
+		height: 8px;
+		background: rgba(251, 191, 36, 1);
+		border-radius: 50%;
+		box-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+	}
+
+	@keyframes rotate-ring {
+		0% { transform: rotate(0deg); }
+		100% { transform: rotate(360deg); }
+	}
+
+	/* Floating Info Card */
+	.contributor-card {
+		position: absolute;
+		top: -180px;
+		left: -120px;
+		width: 300px;
+		background: rgba(0, 0, 0, 0.95);
+		backdrop-filter: blur(20px);
+		border: 1px solid rgba(139, 92, 246, 0.3);
+		border-radius: 16px;
+		padding: 20px;
+		opacity: 0;
+		visibility: hidden;
+		transform: translateY(20px) scale(0.9);
+		transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+		z-index: 100;
+		box-shadow: 
+			0 20px 40px rgba(0, 0, 0, 0.4),
+			inset 0 1px 2px rgba(255, 255, 255, 0.1);
+	}
+
+	.floating-contributor:hover .contributor-card {
+		opacity: 1;
+		visibility: visible;
+		transform: translateY(0) scale(1);
+	}
+
+	.floating-contributor:hover .contributor-orb {
+		transform: scale(1.1);
+	}
+
+	.floating-contributor:hover .avatar-img {
+		transform: scale(1.1);
+	}
+
+	/* Stat Bars */
+	.stat-bar {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.bar-container {
+		flex: 1;
+		height: 6px;
+		background: rgba(255, 255, 255, 0.1);
+		border-radius: 3px;
+		overflow: hidden;
+		position: relative;
+		display: flex;
+		align-items: center;
+	}
+
+	.bar-fill {
+		height: 100%;
+		border-radius: 3px;
+		transition: width 1s ease-out;
+		animation: fill-bar 2s ease-out;
+	}
+
+	@keyframes fill-bar {
+		0% { width: 0%; }
+	}
+
+	.commits-bar {
+		background: linear-gradient(90deg, rgba(139, 92, 246, 1), rgba(139, 92, 246, 0.6));
+		box-shadow: 0 0 8px rgba(139, 92, 246, 0.4);
+	}
+
+	.prs-bar {
+		background: linear-gradient(90deg, rgba(59, 130, 246, 1), rgba(59, 130, 246, 0.6));
+		box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+	}
+
+	/* Contribution Particles */
+	.contribution-particles {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
+
+	.contrib-particle {
+		position: absolute;
+		width: 4px;
+		height: 4px;
+		background: radial-gradient(circle, rgba(139, 92, 246, 1) 0%, transparent 70%);
+		border-radius: 50%;
+		animation: particle-burst 3s ease-out infinite;
+	}
+
+	/* Celestial Type Specific Particles */
+	.celestial-sun .contrib-particle {
+		background: radial-gradient(circle, rgba(251, 191, 36, 1) 0%, transparent 70%);
+		width: 6px;
+		height: 6px;
+		box-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
+	}
+
+	.celestial-planet .contrib-particle {
+		background: radial-gradient(circle, rgba(59, 130, 246, 1) 0%, transparent 70%);
+		width: 5px;
+		height: 5px;
+		box-shadow: 0 0 6px rgba(59, 130, 246, 0.4);
+	}
+
+	.celestial-moon .contrib-particle {
+		background: radial-gradient(circle, rgba(156, 163, 175, 1) 0%, transparent 70%);
+		width: 3px;
+		height: 3px;
+		box-shadow: 0 0 4px rgba(156, 163, 175, 0.3);
+	}
+
+	.contrib-particle:nth-child(1) { 
+		top: 10%;
+		left: 10%;
+		animation-delay: 0s;
+	}
+	.contrib-particle:nth-child(2) { 
+		top: 20%;
+		right: 10%;
+		animation-delay: 0.3s;
+	}
+	.contrib-particle:nth-child(3) { 
+		bottom: 20%;
+		left: 20%;
+		animation-delay: 0.6s;
+	}
+	.contrib-particle:nth-child(4) { 
+		bottom: 10%;
+		right: 20%;
+		animation-delay: 0.9s;
+	}
+
+	@keyframes particle-burst {
+		0% {
+			transform: scale(0) rotate(0deg);
+			opacity: 1;
+		}
+		50% {
+			transform: scale(1) rotate(180deg);
+			opacity: 0.8;
+		}
+		100% {
+			transform: scale(0) rotate(360deg);
+			opacity: 0;
+		}
+	}
+
+	/* Connection Lines */
+	.connection-line {
+		stroke: rgba(139, 92, 246, 0.3);
+		stroke-width: 1;
+		fill: none;
+		opacity: 0;
+		transition: opacity 0.5s ease;
+		animation: draw-line 2s ease-out;
+	}
+
+	@keyframes draw-line {
+		0% { stroke-dasharray: 1000; stroke-dashoffset: 1000; }
+		100% { stroke-dasharray: 1000; stroke-dashoffset: 0; }
+	}
+
+	/* Responsive Design */
+	@media (max-width: 768px) {
+		.galaxy-container {
+			height: 400px !important;
+		}
+		
+		.floating-contributor {
+			animation: gentle-float 4s ease-in-out infinite alternate !important;
+			position: relative !important;
+			display: inline-block;
+			margin: 10px;
+		}
+		
+		.floating-contributor::before {
+			display: none; /* Hide orbital paths on mobile */
+		}
+		
+		.celestial-sun:hover::after,
+		.celestial-planet:hover::after {
+			display: none; /* Hide gravitational fields on mobile */
+		}
+		
+		.contributor-card {
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			width: 90vw;
+			max-width: 320px;
+		}
+		
+		/* Arrange contributors in a simple grid on mobile */
+		.floating-contributor {
+			position: relative !important;
+			left: auto !important;
+			top: auto !important;
+			display: inline-flex;
+			margin: 8px;
+		}
+		
+		/* Reset all animations on mobile */
+		.celestial-planet,
+		.celestial-moon {
+			animation: gentle-float 4s ease-in-out infinite alternate !important;
+		}
+	}
+
+	@media (max-width: 480px) {
+		.galaxy-container {
+			height: 300px !important;
+		}
+		
+		.celestial-sun .contributor-orb {
+			width: 60px;
+			height: 60px;
+		}
+		
+		.celestial-planet .contributor-orb {
+			width: 50px;
+			height: 50px;
+		}
+		
+		.celestial-moon .contributor-orb {
+			width: 40px;
+			height: 40px;
+		}
+	}
+
+	/* Enhanced Hover Effects */
+	.floating-contributor:hover {
+		z-index: 200;
+	}
+
+	.floating-contributor:hover .orb-glow {
+		animation-duration: 1s;
+		transform: scale(1.5);
+	}
+
+	.floating-contributor:hover .contrib-particle {
+		animation-duration: 1s;
+	}
+
+	/* Orbital path visualization */
+	.floating-contributor::before {
+		content: '';
+		position: absolute;
+		border: 1px dashed rgba(255, 255, 255, 0.1);
+		border-radius: 50%;
+		opacity: 0;
+		transition: opacity 0.3s ease;
+		pointer-events: none;
+		z-index: -1;
+	}
+
+	.celestial-planet::before {
+		width: calc(var(--orbit-radius, 0px) * 2);
+		height: calc(var(--orbit-radius, 0px) * 2);
+		left: calc(-1 * var(--orbit-radius, 0px));
+		top: calc(-1 * var(--orbit-radius, 0px));
+		border-color: rgba(59, 130, 246, 0.3);
+	}
+
+	.celestial-moon::before {
+		width: calc(var(--orbit-radius, 0px) * 2);
+		height: calc(var(--orbit-radius, 0px) * 2);
+		left: calc(-1 * var(--orbit-radius, 0px));
+		top: calc(-1 * var(--orbit-radius, 0px));
+		border-color: rgba(156, 163, 175, 0.3);
+	}
+
+	.floating-contributor:hover::before {
+		opacity: 1;
+	}
+
+	/* Gravitational field effect */
+	.celestial-sun:hover::after,
+	.celestial-planet:hover::after {
+		content: '';
+		position: absolute;
+		border-radius: 50%;
+		background: radial-gradient(circle, transparent 60%, rgba(251, 191, 36, 0.1) 80%, transparent 100%);
+		animation: gravitational-pulse 2s ease-in-out infinite;
+		pointer-events: none;
+		z-index: -1;
+	}
+
+	.celestial-sun:hover::after {
+		width: 300px;
+		height: 300px;
+		left: -150px;
+		top: -150px;
+		background: radial-gradient(circle, transparent 60%, rgba(251, 191, 36, 0.15) 80%, transparent 100%);
+	}
+
+	.celestial-planet:hover::after {
+		width: 200px;
+		height: 200px;
+		left: -100px;
+		top: -100px;
+		background: radial-gradient(circle, transparent 60%, rgba(59, 130, 246, 0.1) 80%, transparent 100%);
+	}
+
+	@keyframes gravitational-pulse {
+		0%, 100% { transform: scale(0.8); opacity: 0.5; }
+		50% { transform: scale(1.2); opacity: 0.8; }
+	}
+
+	/* Card Content Styling */
+	.card-content {
+		position: relative;
+		z-index: 1;
+	}
+
+	.card-content::before {
+		content: '';
+		position: absolute;
+		inset: -20px;
+		background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), transparent);
+		border-radius: 16px;
+		z-index: -1;
+	}
+</style>
+
+<script>
+	document.addEventListener('DOMContentLoaded', () => {
+		const playBtn = document.getElementById('play-galaxy') as HTMLButtonElement;
+		const connectBtn = document.getElementById('connect-contributors') as HTMLButtonElement;
+		const contributors = document.querySelectorAll('.floating-contributor') as NodeListOf<HTMLElement>;
+		const connectionSvg = document.getElementById('connection-lines') as SVGElement | null;
+		
+		let isAnimating = true;
+		let showConnections = false;
+
+		// Set up orbital mechanics - no complex calculations needed
+		// CSS animations with custom properties handle the orbits
+		contributors.forEach((contributor) => {
+			const orbitRadius = contributor.dataset.orbitRadius;
+			if (orbitRadius) {
+				contributor.style.setProperty('--orbit-radius', `${orbitRadius}px`);
+			}
+		});
+
+		// Add gravitational pull effect - when hovering over a massive body, nearby objects get attracted
+		contributors.forEach((contributor) => {
+			const celestialType = contributor.dataset.celestialType;
+			
+			if (celestialType === 'sun' || celestialType === 'planet') {
+				contributor.addEventListener('mouseenter', () => {
+					// Find nearby contributors and create attraction effect
+					const contributorRect = contributor.getBoundingClientRect();
+					const attractionRadius = celestialType === 'sun' ? 150 : 100;
+					
+					contributors.forEach((other) => {
+						if (other === contributor) return;
+						
+						const otherRect = other.getBoundingClientRect();
+						const distance = Math.sqrt(
+							Math.pow(contributorRect.left - otherRect.left, 2) + 
+							Math.pow(contributorRect.top - otherRect.top, 2)
+						);
+						
+						if (distance < attractionRadius) {
+							other.style.transform += ` scale(1.1)`;
+							other.style.transition = 'transform 0.3s ease';
+						}
+					});
+				});
+				
+				contributor.addEventListener('mouseleave', () => {
+					// Reset attraction effect
+					contributors.forEach((other) => {
+						if (other === contributor) return;
+						other.style.transform = other.style.transform.replace(/ scale\([^)]*\)/g, '');
+					});
+				});
+			}
+		});
+
+		// Galaxy Animation Control
+		playBtn?.addEventListener('click', () => {
+			isAnimating = !isAnimating;
+			
+			contributors.forEach(contributor => {
+				if (isAnimating) {
+					contributor.style.animationPlayState = 'running';
+					playBtn.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4v12l8-6-8-6z"/></svg> Animate';
+				} else {
+					contributor.style.animationPlayState = 'paused';
+					playBtn.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M6 4h2v12H6V4zm6 0h2v12h-2V4z"/></svg> Resume';
+				}
+			});
+		});
+
+		// Connection Lines
+		connectBtn?.addEventListener('click', () => {
+			showConnections = !showConnections;
+			
+			if (showConnections) {
+				drawConnections();
+				connectBtn.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg> Disconnect';
+			} else {
+				clearConnections();
+				connectBtn.innerHTML = '<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M13.828 10.172a4 4 0 00-5.656 0l-.708-.708a5 5 0 017.072 0l-.708.708zm-1.414 1.414a2 2 0 00-2.828 0l-.708-.708a3 3 0 014.243 0l-.707.708zm-4.243.708a1 1 0 011.414 0l.707.708a1 1 0 11-1.414 1.414L8.17 13.414a1 1 0 010-1.414z"/></svg> Connect';
+			}
+		});
+
+		function drawConnections() {
+			if (!connectionSvg) return;
+			clearConnections();
+			
+			const contributorPositions = Array.from(contributors).map(contrib => {
+				const rect = contrib.getBoundingClientRect();
+				const svgRect = connectionSvg!.getBoundingClientRect();
+				return {
+					x: rect.left - svgRect.left + rect.width / 2,
+					y: rect.top - svgRect.top + rect.height / 2,
+					element: contrib
+				};
+			});
+
+			// Draw lines between contributors
+			for (let i = 0; i < contributorPositions.length; i++) {
+				for (let j = i + 1; j < contributorPositions.length; j++) {
+					const pos1 = contributorPositions[i];
+					const pos2 = contributorPositions[j];
+					
+					if (pos1 && pos2) {
+						const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+						line.setAttribute('x1', pos1.x.toString());
+						line.setAttribute('y1', pos1.y.toString());
+						line.setAttribute('x2', pos2.x.toString());
+						line.setAttribute('y2', pos2.y.toString());
+						line.setAttribute('class', 'connection-line');
+						
+						connectionSvg!.appendChild(line);
+						
+						// Animate line appearance
+						setTimeout(() => {
+							(line as any).style.opacity = '0.6';
+						}, (i + j) * 100);
+					}
+				}
+			}
+		}
+
+		function clearConnections() {
+			if (!connectionSvg) return;
+			connectionSvg.innerHTML = '';
+		}
+
+		// Enhanced hover effects with particle burst
+		contributors.forEach((contributor, index) => {
+			const particles = contributor.querySelectorAll('.contrib-particle') as NodeListOf<HTMLElement>;
+			
+			contributor.addEventListener('mouseenter', () => {
+				// Trigger particle burst
+				if (particles) {
+					particles.forEach((particle, i) => {
+						particle.style.animationDelay = `${i * 0.1}s`;
+						particle.style.animationDuration = '1s';
+					});
+				}
+				
+				// Enhanced glow effect
+				const orb = contributor.querySelector('.orb-glow') as HTMLElement;
+				if (orb) {
+					orb.style.transform = 'scale(1.8)';
+					orb.style.opacity = '1';
+				}
+
+				// Ripple effect
+				createRipple(contributor);
+			});
+
+			contributor.addEventListener('mouseleave', () => {
+				// Reset effects
+				if (particles) {
+					particles.forEach(particle => {
+						particle.style.animationDuration = '3s';
+					});
+				}
+				
+				const orb = contributor.querySelector('.orb-glow') as HTMLElement;
+				if (orb) {
+					orb.style.transform = 'scale(1.2)';
+					orb.style.opacity = '0.6';
+				}
+			});
+		});
+
+		function createRipple(element: HTMLElement) {
+			const ripple = document.createElement('div');
+			ripple.style.cssText = `
+				position: absolute;
+				border-radius: 50%;
+				background: radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, transparent 70%);
+				transform: scale(0);
+				animation: ripple-effect 1s ease-out;
+				pointer-events: none;
+				inset: -20px;
+				z-index: 1;
+			`;
+			
+			element.appendChild(ripple);
+			
+			setTimeout(() => {
+				ripple.remove();
+			}, 1000);
+		}
+
+		// Add dynamic CSS for ripple animation
+		const style = document.createElement('style');
+		style.textContent = `
+			@keyframes ripple-effect {
+				0% {
+					transform: scale(0);
+					opacity: 1;
+				}
+				100% {
+					transform: scale(2);
+					opacity: 0;
+				}
+			}
+		`;
+		document.head.appendChild(style);
+
+		// Parallax effect for particles
+		document.addEventListener('mousemove', (e) => {
+			const particles = document.querySelectorAll('.particle') as NodeListOf<HTMLElement>;
+			const mouseX = e.clientX / window.innerWidth;
+			const mouseY = e.clientY / window.innerHeight;
+			
+			particles.forEach((particle, index) => {
+				const speed = (index % 3 + 1) * 0.5;
+				const x = (mouseX - 0.5) * speed * 20;
+				const y = (mouseY - 0.5) * speed * 20;
+				
+				particle.style.transform = `translate(${x}px, ${y}px)`;
+			});
+		});
+
+		// Auto-rotate contributors when not interacting
+		let autoRotateInterval: ReturnType<typeof setInterval>;
+		let lastInteraction = Date.now();
+
+		function startAutoRotate() {
+			autoRotateInterval = setInterval(() => {
+				if (Date.now() - lastInteraction > 3000) { // 3 seconds of no interaction
+					contributors.forEach((contributor, index) => {
+						const delay = index * 200;
+						setTimeout(() => {
+							if (!contributor.matches(':hover')) {
+								contributor.style.transform += ' scale(1.05)';
+								setTimeout(() => {
+									contributor.style.transform = contributor.style.transform.replace(' scale(1.05)', '');
+								}, 300);
+							}
+						}, delay);
+					});
+				}
+			}, 5000);
+		}
+
+		function stopAutoRotate() {
+			clearInterval(autoRotateInterval);
+			lastInteraction = Date.now();
+		}
+
+		// Track user interactions
+		document.addEventListener('mousemove', stopAutoRotate);
+		document.addEventListener('click', stopAutoRotate);
+		document.addEventListener('scroll', stopAutoRotate);
+
+		// Start auto-rotate
+		startAutoRotate();
+
+		// Intersection Observer for entrance animations
+		const observer = new IntersectionObserver((entries) => {
+			entries.forEach((entry, index) => {
+				if (entry.isIntersecting) {
+					setTimeout(() => {
+						const target = entry.target as HTMLElement;
+						target.style.opacity = '1';
+						target.style.transform = 'translateY(0)';
+					}, index * 100);
+				}
+			});
+		}, { threshold: 0.1 });
+
+		contributors.forEach(contributor => {
+			contributor.style.opacity = '0';
+			contributor.style.transform = 'translateY(50px)';
+			contributor.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+			observer.observe(contributor);
+		});
+	});
+</script>
+</PageLayout>
