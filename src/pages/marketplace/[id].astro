@@ -1,0 +1,264 @@
+---
+import { getPluginById, discoverPlugins } from '../../data/marketplace'
+import Layout from '../../layouts/Base.astro'
+import { Icon } from 'astro-icon/components'
+import FormattedDate from '../../components/FormattedDate.astro'
+
+export async function getStaticPaths() {
+  const plugins = await discoverPlugins()
+  return plugins.map((plugin) => ({
+    params: { id: plugin.id },
+    props: { plugin }
+  }))
+}
+
+const { id } = Astro.params
+const plugin = await getPluginById(id!)
+
+if (!plugin) {
+  return Astro.redirect('/404')
+}
+
+const title = `${plugin.name} - Plugin Marketplace`
+const description = plugin.description
+
+const meta = {
+  title,
+  description
+}
+---
+
+<Layout meta={meta}>
+  <div class="max-w-4xl">
+    <!-- Back Navigation -->
+    <div class="mb-6">
+      <a
+        href="/marketplace"
+        class="inline-flex items-center text-accent-base hover:text-accent-one transition-colors"
+      >
+        <Icon class="w-4 h-4 mr-2" name="solar:arrow-left-line-duotone" />
+        Back to Marketplace
+      </a>
+    </div>
+
+    <!-- Plugin Header -->
+    <header class="mb-8">
+      <div class="flex items-start justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <Icon class="h-8 w-8 text-accent-base" name="solar:widget-bold" />
+          <div>
+            <h1 class="title mb-2">
+              {plugin.name}
+            </h1>
+            <p class="text-lg text-light">
+              {plugin.description}
+            </p>
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-2 ml-4">
+          {plugin.trust_level === 'official' && (
+            <div class="flex items-center gap-1 px-3 py-1.5 bg-accent-two/10 text-accent-two rounded-full text-sm font-medium">
+              <Icon class="h-4 w-4" name="solar:shield-check-bold" />
+              <span>Official</span>
+            </div>
+          )}
+          {plugin.trust_level === 'community' && (
+            <div class="flex items-center gap-1 px-3 py-1.5 bg-orange-400/10 text-orange-400 rounded-full text-sm font-medium">
+              <Icon class="h-4 w-4" name="solar:users-group-rounded-bold" />
+              <span>Community</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <!-- Meta Information Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-special-light/50 rounded-lg border border-special-light">
+        <div>
+          <dt class="text-sm font-medium text-lighter">Version</dt>
+          <dd class="text-accent-base font-medium">{plugin.version}</dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-lighter">Author</dt>
+          <dd class="text-textColor">{plugin.author}</dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-lighter">Updated</dt>
+          <dd class="text-textColor">
+            <FormattedDate date={new Date(plugin.updated_at)} />
+          </dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-lighter">Created</dt>
+          <dd class="text-textColor">
+            <FormattedDate date={new Date(plugin.created_at)} />
+          </dd>
+        </div>
+      </div>
+    </header>
+
+    <div class="grid lg:grid-cols-3 gap-8">
+      <!-- Main Content -->
+      <div class="lg:col-span-2 space-y-8">
+        <!-- Tags Section -->
+        <section>
+          <h2 class="text-xl font-semibold text-accent-base mb-4 flex items-center gap-2">
+            <Icon class="h-5 w-5" name="solar:tag-bold" />
+            Tags
+          </h2>
+          <div class="flex flex-wrap gap-2">
+            {plugin.tags.map((tag) => (
+              <span class="px-3 py-1.5 bg-color-100 text-textColor rounded-full text-sm font-medium">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </section>
+
+        <!-- Plugin Details Section -->
+        <section>
+          <h2 class="text-xl font-semibold text-accent-base mb-4 flex items-center gap-2">
+            <Icon class="h-5 w-5" name="solar:info-circle-bold" />
+            Plugin Details
+          </h2>
+          <div class="bg-special-light/50 rounded-lg p-6 border border-special-light">
+            <dl class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <dt class="text-sm font-medium text-lighter mb-2">Entry Point</dt>
+                <dd class="font-mono text-sm bg-color-100 px-3 py-2 rounded text-textColor">
+                  {plugin.manifest.entry_point}
+                </dd>
+              </div>
+              
+              {plugin.manifest.dependencies && Object.keys(plugin.manifest.dependencies).length > 0 && (
+                <div>
+                  <dt class="text-sm font-medium text-lighter mb-2">Dependencies</dt>
+                  <dd>
+                    <ul class="space-y-2">
+                      {Object.entries(plugin.manifest.dependencies).map(([name, version]) => (
+                        <li class="font-mono text-sm bg-color-100 px-3 py-2 rounded flex justify-between">
+                          <span class="text-accent-base">{name}</span>
+                          <span class="text-lighter">{version}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </dd>
+                </div>
+              )}
+              
+              {plugin.manifest.permissions && plugin.manifest.permissions.length > 0 && (
+                <div class="md:col-span-2">
+                  <dt class="text-sm font-medium text-lighter mb-2">Permissions Required</dt>
+                  <dd>
+                    <ul class="space-y-2">
+                      {plugin.manifest.permissions.map((permission) => (
+                        <li class="flex items-center gap-2 p-2 bg-orange-400/10 rounded border border-orange-400/20">
+                          <Icon class="h-4 w-4 text-orange-400 flex-shrink-0" name="solar:shield-warning-bold" />
+                          <span class="text-textColor text-sm">{permission}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </dd>
+                </div>
+              )}
+            </dl>
+          </div>
+        </section>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="lg:col-span-1">
+        <div class="sticky top-8 space-y-6">
+
+          <!-- Installation Instructions -->
+          <div class="bg-special-light/50 rounded-lg p-6 border border-special-light">
+            <h3 class="text-lg font-semibold text-accent-base mb-4 flex items-center gap-2">
+              <Icon class="h-10 w-5" name="solar:settings-bold" />
+              Installation
+            </h3>
+            
+            <div class="space-y-4 text-sm">
+              <div>
+                <div class="relative">
+                  <code 
+                    id="cli-command" 
+                    class="block bg-color-100 p-3 pr-12 rounded text-textColor font-mono select-all"
+                  >
+                    aurras plugin install {plugin.id}
+                  </code>
+                  <button
+                    id="copy-cli-command"
+                    class="absolute top-1 right-1 p-1.5 rounded bg-color-200 hover:bg-color-300 text-textColor transition-colors"
+                    title="Copy command"
+                    aria-label="Copy CLI command"
+                  >
+                    <Icon class="h-3 w-3" name="solar:copy-bold" />
+                  </button>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+
+          <!-- Security Notice for Community Plugins -->
+          {plugin.trust_level === 'community' && (
+            <div class="bg-orange-400/10 border border-orange-400/20 rounded-lg p-4">
+              <div class="flex items-start gap-3">
+                <Icon class="w-5 h-5 text-orange-400 mt-0.5 flex-shrink-0" name="solar:shield-warning-bold" />
+                <div>
+                  <h4 class="text-sm font-medium text-orange-400 mb-1">
+                    Community Plugin
+                  </h4>
+                  <p class="text-sm text-light">
+                    This plugin is contributed by the community. Please review the code before installation.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  // Copy CLI command functionality
+  document.addEventListener('DOMContentLoaded', () => {
+    const copyButton = document.getElementById('copy-cli-command')
+    const cliCommand = document.getElementById('cli-command')
+    
+    if (copyButton && cliCommand) {
+      copyButton.addEventListener('click', async () => {
+        try {
+          const text = cliCommand.textContent?.trim() || ''
+          await navigator.clipboard.writeText(text)
+          
+          // Visual feedback
+          const icon = copyButton.querySelector('.astro-icon')
+          const originalContent = copyButton.innerHTML
+          
+          // Show success state
+          copyButton.innerHTML = '<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
+          copyButton.style.backgroundColor = 'var(--theme-color-300)'
+          
+          // Reset after 2 seconds
+          setTimeout(() => {
+            copyButton.innerHTML = originalContent
+            copyButton.style.backgroundColor = ''
+          }, 2000)
+          
+        } catch (err) {
+          console.error('Failed to copy text: ', err)
+          
+          // Fallback: select the text for manual copy
+          const range = document.createRange()
+          range.selectNodeContents(cliCommand)
+          const selection = window.getSelection()
+          selection?.removeAllRanges()
+          selection?.addRange(range)
+        }
+      })
+    }
+  })
+</script>
