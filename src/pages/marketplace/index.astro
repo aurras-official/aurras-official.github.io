@@ -1,0 +1,213 @@
+---
+import Layout from '../../layouts/Base.astro'
+import { getSortedPlugins, getSearchIndex } from '../../data/marketplace'
+import { Icon } from 'astro-icon/components'
+
+// Dynamic plugin discovery at build time
+const sortedPlugins = await getSortedPlugins()
+const searchIndex = await getSearchIndex()
+
+const meta = {
+  title: 'Plugin Marketplace',
+  description: 'Discover and install plugins to extend Aurras functionality. Browse official and community-contributed plugins.'
+}
+---
+
+<Layout meta={meta}>
+  <div class="max-w-4xl">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+      <h1 class="title flex items-center gap-2">
+        <Icon class="h-8 w-8 text-accent-base" name="solar:widget-add-bold" />
+        Plugin Marketplace
+      </h1>
+
+      <!-- Search Bar -->
+      <div class="w-full md:w-80">
+        <div class="relative group">
+          <div class="relative bg-special-light/80 backdrop-blur-sm border border-special-lighter/50 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
+            <input
+              type="text"
+              id="search-input"
+              placeholder="Search plugins..."
+              class="w-full px-4 py-3 pl-12 pr-4 bg-transparent text-textColor placeholder-lighter/70 focus:outline-none focus:placeholder-lighter/50 transition-all duration-200"
+            />
+            <div class="absolute left-3 top-1/2 transform -translate-y-1/2 p-1">
+              <Icon 
+                class="h-5 w-5 text-accent-base group-hover:text-accent-two transition-colors duration-200" 
+                name="solar:magnifer-line-duotone" 
+              />
+            </div>
+            <div class="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent-base/30 to-transparent opacity-0 group-focus-within:opacity-100 transition-opacity duration-300"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-lg mb-8 text-light">
+      Discover and install plugins to extend Aurras functionality. Browse 
+      carefully curated official plugins and community contributions.
+    </p>
+
+    <!-- Plugin Grid -->
+    <div id="plugin-grid" class="grid gap-6 md:grid-cols-2">
+      {sortedPlugins.map((plugin) => (
+        <article class="group relative overflow-hidden rounded-xl border border-special-light bg-special-light/50 p-6 transition-all hover:border-accent-base/30 hover:bg-special-light/80">
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <Icon
+                class="h-6 w-6 text-accent-base"
+                name="solar:widget-bold"
+              />
+              <div class="flex items-center gap-1 px-2 py-1 bg-accent-base/10 text-accent-base rounded-full text-xs font-medium">
+                <Icon
+                  class="h-3 w-3"
+                  name="solar:programming-bold"
+                />
+                <span>{plugin.category || 'Plugin'}</span>
+              </div>
+            </div>
+            <span class="text-sm text-lighter">
+              v{plugin.version}
+            </span>
+          </div>
+
+          <h2 class="text-xl font-semibold text-accent-base mb-3 group-hover:text-accent-one transition-colors">
+            <a
+              href={`/marketplace/${plugin.id}`}
+              class="stretched-link"
+            >
+              {plugin.name}
+            </a>
+          </h2>
+
+          <p class="text-light leading-relaxed mb-4 line-clamp-2">
+            {plugin.description}
+          </p>
+
+          <!-- Tags -->
+          <div class="flex flex-wrap gap-2 mb-4">
+            {plugin.tags.slice(0, 3).map((tag) => (
+              <span class="px-2 py-1 bg-color-100 text-lighter text-xs rounded">
+                {tag}
+              </span>
+            ))}
+            {plugin.tags.length > 3 && (
+              <span class="px-2 py-1 bg-color-100 text-lightest text-xs rounded">
+                +{plugin.tags.length - 3}
+              </span>
+            )}
+          </div>
+
+          <!-- Author -->
+          <div class="text-sm text-lighter mb-4">
+            by {plugin.author}
+          </div>
+
+          <div class="mt-4 flex items-center text-sm text-accent-base">
+            <span>View plugin</span>
+            <Icon
+              class="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform"
+              name="solar:arrow-right-line-duotone"
+            />
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <!-- No Results Message -->
+    <div id="no-results" class="text-center py-12 hidden">
+      <Icon
+        class="h-16 w-16 text-lighter mx-auto mb-4"
+        name="solar:widget-line-duotone"
+      />
+      <h2 class="text-xl font-semibold text-accent-base mb-2">
+        No plugins found
+      </h2>
+      <p class="text-light">
+        Try adjusting your search terms or browse all available plugins.
+      </p>
+    </div>
+
+    {sortedPlugins.length === 0 && (
+      <div class="text-center py-12">
+        <Icon
+          class="h-16 w-16 text-lighter mx-auto mb-4"
+          name="solar:widget-line-duotone"
+        />
+        <h2 class="text-xl font-semibold text-accent-base mb-2">
+          No plugins available
+        </h2>
+        <p class="text-light">
+          Check back later for new plugins in the marketplace.
+        </p>
+      </div>
+    )}
+  </div>
+</Layout>
+
+<!-- Search Functionality -->
+<script define:vars={{ searchIndex }}>
+  const searchInput = document.getElementById('search-input') as HTMLInputElement
+  const pluginGrid = document.getElementById('plugin-grid') as HTMLElement
+  const noResults = document.getElementById('no-results') as HTMLElement
+  const pluginCards = Array.from(pluginGrid.children) as HTMLElement[]
+
+  function performSearch(query: string) {
+    const lowerQuery = query.toLowerCase().trim()
+    
+    if (lowerQuery === '') {
+      // Show all plugins
+      pluginCards.forEach(card => card.style.display = 'block')
+      noResults.classList.add('hidden')
+      return
+    }
+
+    let visibleCount = 0
+    
+    pluginCards.forEach((card, index) => {
+      const plugin = searchIndex[index]
+      if (!plugin) return
+      
+      const matches = plugin.searchText.includes(lowerQuery)
+      
+      if (matches) {
+        card.style.display = 'block'
+        visibleCount++
+      } else {
+        card.style.display = 'none'
+      }
+    })
+
+    // Show/hide no results message
+    if (visibleCount === 0) {
+      noResults.classList.remove('hidden')
+    } else {
+      noResults.classList.add('hidden')
+    }
+  }
+
+  // Real-time search
+  searchInput?.addEventListener('input', (e) => {
+    const target = e.target as HTMLInputElement
+    performSearch(target.value)
+  })
+</script>
+
+<style>
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .stretched-link::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+    content: "";
+  }
+</style>
