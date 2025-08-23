@@ -80,7 +80,7 @@ const meta = {
         </div>
         <div>
           <dt class="text-sm font-medium text-lighter">Author</dt>
-          <dd class="text-textColor">{plugin.author}</dd>
+          <dd class="text-textColor">{plugin.author.name}</dd>
         </div>
         <div>
           <dt class="text-sm font-medium text-lighter">Updated</dt>
@@ -115,55 +115,28 @@ const meta = {
           </div>
         </section>
 
-        <!-- Plugin Details Section -->
+        <!-- Permissions Section -->
         <section>
           <h2 class="text-xl font-semibold text-accent-base mb-4 flex items-center gap-2">
-            <Icon class="h-5 w-5" name="solar:info-circle-bold" />
-            Plugin Details
+            <Icon class="h-5 w-5" name="solar:shield-warning-bold" />
+            Permissions Required
           </h2>
-          <div class="bg-special-light/50 rounded-lg p-6 border border-special-light">
-            <dl class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <dt class="text-sm font-medium text-lighter mb-2">Entry Point</dt>
-                <dd class="font-mono text-sm bg-color-100 px-3 py-2 rounded text-textColor">
-                  {plugin.manifest.entry_point}
-                </dd>
-              </div>
-              
-              {plugin.manifest.dependencies && Object.keys(plugin.manifest.dependencies).length > 0 && (
-                <div>
-                  <dt class="text-sm font-medium text-lighter mb-2">Dependencies</dt>
-                  <dd>
-                    <ul class="space-y-2">
-                      {Object.entries(plugin.manifest.dependencies).map(([name, version]) => (
-                        <li class="font-mono text-sm bg-color-100 px-3 py-2 rounded flex justify-between">
-                          <span class="text-accent-base">{name}</span>
-                          <span class="text-lighter">{version}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </dd>
-                </div>
-              )}
-              
-              {plugin.manifest.permissions && plugin.manifest.permissions.length > 0 && (
-                <div class="md:col-span-2">
-                  <dt class="text-sm font-medium text-lighter mb-2">Permissions Required</dt>
-                  <dd>
-                    <ul class="space-y-2">
-                      {plugin.manifest.permissions.map((permission) => (
-                        <li class="flex items-center gap-2 p-2 bg-orange-400/10 rounded border border-orange-400/20">
-                          <Icon class="h-4 w-4 text-orange-400 flex-shrink-0" name="solar:shield-warning-bold" />
-                          <span class="text-textColor text-sm">{permission}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </dd>
-                </div>
-              )}
-            </dl>
+          <div class="flex flex-wrap gap-2">
+            {plugin.permissions && plugin.permissions.length > 0 ? (
+              plugin.permissions.map((permission) => (
+                <span class="px-3 py-1.5 bg-color-100 text-textColor rounded-full text-sm font-medium">
+                  {permission}
+                </span>
+              ))
+            ) : (
+              <span class="px-3 py-1.5 bg-green-400/10 text-green-400 border border-green-400/20 rounded-full text-sm font-medium flex items-center gap-1">
+                <Icon class="h-3 w-3" name="solar:shield-check-bold" />
+                No special permissions required
+              </span>
+            )}
           </div>
         </section>
+
       </div>
 
       <!-- Sidebar -->
