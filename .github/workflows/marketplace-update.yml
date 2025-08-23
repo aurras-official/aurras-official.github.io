@@ -1,0 +1,139 @@
+name: Update Marketplace
+
+on:
+  repository_dispatch:
+    types: [marketplace_update]
+
+jobs:
+  update-marketplace:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          
+      - name: Install dependencies
+        run: pnpm install
+        
+      - name: Data validation
+        run: |
+          echo "🔍 Step 1: Data validation..."
+          
+          # Parse plugin data from dispatch payload
+          echo '${{ github.event.client_payload.plugins }}' > /tmp/plugins.json
+          
+          # Data integrity validation only
+          cat > validate-data.mjs << 'EOF'
+          import { validateDataIntegrity } from './src/utils/data-integrity-test.js';
+          import { readFile } from 'node:fs/promises';
+          
+          const plugins = JSON.parse(await readFile('/tmp/plugins.json', 'utf8'));
+          
+          for (const plugin of plugins) {
+            console.log(`Data validation for ${plugin.id}...`);
+            
+            const integrityResult = validateDataIntegrity(plugin);
+            if (!integrityResult.isValid) {
+              console.log(`❌ Data validation failed for ${plugin.id}:`);
+              integrityResult.errors.forEach(err => console.log(`  - ${err}`));
+              process.exit(1);
+            }
+            
+            console.log(`✅ Data validation passed for ${plugin.id}`);
+          }
+          EOF
+          
+          node validate-data.mjs
+          rm validate-data.mjs
+          
+      - name: Create manifest files
+        run: |
+          echo "📁 Step 2: Creating manifest.json files..."
+          
+          mkdir -p src/data/marketplace
+          
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            const plugins = JSON.parse(fs.readFileSync('/tmp/plugins.json', 'utf8'));
+            
+            plugins.forEach(plugin => {
+              const pluginDir = path.join('src/data/marketplace', plugin.id);
+              fs.mkdirSync(pluginDir, { recursive: true });
+              
+              const manifestPath = path.join(pluginDir, 'manifest.json');
+              fs.writeFileSync(manifestPath, JSON.stringify(plugin, null, 2));
+              
+              console.log('Created:', manifestPath);
+            });
+          "
+          
+      - name: Schema validation
+        run: |
+          echo "📋 Step 3: Schema validation of created manifest.json files..."
+          
+          cat > validate-schema.mjs << 'EOF'
+          import { validateManifestSchema } from './src/utils/schema-validation-test.js';
+          import { readFile } from 'node:fs/promises';
+          import { readdirSync } from 'node:fs';
+          
+          const marketplaceDir = 'src/data/marketplace';
+          const pluginDirs = readdirSync(marketplaceDir);
+          
+          for (const pluginId of pluginDirs) {
+            const manifestPath = `${marketplaceDir}/${pluginId}/manifest.json`;
+            console.log(`Schema validation for ${manifestPath}...`);
+            
+            const manifestData = JSON.parse(await readFile(manifestPath, 'utf8'));
+            const schemaResult = validateManifestSchema(manifestData);
+            
+            if (!schemaResult.isValid) {
+              console.log(`❌ Schema validation failed for ${pluginId}:`);
+              schemaResult.errors.forEach(err => console.log(`  - ${err}`));
+              process.exit(1);
+            }
+            
+            console.log(`✅ Schema validation passed for ${pluginId}`);
+            
+            if (schemaResult.warnings.length > 0) {
+              console.log(`⚠️ Warnings for ${pluginId}:`);
+              schemaResult.warnings.forEach(warn => console.log(`  - ${warn}`));
+            }
+          }
+          EOF
+          
+          node validate-schema.mjs
+          rm validate-schema.mjs
+          
+      - name: Build website
+        run: |
+          echo "🏗️ Step 4: Building website..."
+          pnpm run check
+          pnpm run build
+          
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          if [[ `git status --porcelain` ]]; then
+            git add src/data/marketplace/
+            git commit -m "🤖 Update marketplace: $(echo '${{ github.event.client_payload.plugins }}' | jq -r 'map(.id) | join(", ")')"
+            git push
+            echo "✅ Changes committed and pushed"
+          else
+            echo "ℹ️ No changes to commit"
+          fi
