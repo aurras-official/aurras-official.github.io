@@ -8,8 +8,8 @@ const meta = {
 	title: "Contributors",
 };
 
-// GitHub repository configuration
-const GITHUB_OWNER = "vedant-asati03";
+// GitHub repository configuration - these would be set dynamically in a real implementation
+const GITHUB_OWNER = "aurras-official";
 const GITHUB_REPO = "Aurras";
 
 // Cache configuration
@@ -57,19 +57,25 @@ interface ContributorData {
 	specialties: string[];
 	joinedDate: string;
 	isCore: boolean;
-	celestialType: 'sun' | 'planet' | 'moon';
+	celestialType: 'blackhole' | 'star' | 'planet' | 'moon';
 	githubProfile?: GitHubUser;
 }
 
-// Function to determine celestial type based on contributions
-function getCelestialType(commits: number): 'sun' | 'planet' | 'moon' {
-	if (commits >= 100) return 'sun';
+// Function to determine celestial type based on contributions and username
+function getCelestialType(commits: number, username: string): 'blackhole' | 'star' | 'planet' | 'moon' {
+	// Special case: aurras-official is always the black hole at center
+	if (username === 'aurras-official') {
+		return 'blackhole';
+	}
+	
+	// Hierarchy for other contributors based on commits
+	if (commits >= 100) return 'star';
 	if (commits >= 20) return 'planet';
 	return 'moon';
 }
 
-// Function to determine role based on contributions and profile
-function determineRole(contributor: GitHubContributor, profile?: GitHubUser): string {
+// Function to determine role based on contributions
+function determineRole(contributor: GitHubContributor): string {
 	const { contributions, login } = contributor;
 	
 	// Owner/Creator
@@ -84,21 +90,7 @@ function determineRole(contributor: GitHubContributor, profile?: GitHubUser): st
 	
 	// Medium contributors
 	if (contributions >= 20) {
-		return profile?.company ? "Senior Developer" : "Feature Developer";
-	}
-	
-	// Based on profile info if available
-	if (profile?.bio) {
-		const bio = profile.bio.toLowerCase();
-		if (bio.includes('design') || bio.includes('ui') || bio.includes('ux')) {
-			return "UI/UX Contributor";
-		}
-		if (bio.includes('doc') || bio.includes('writer') || bio.includes('technical writing')) {
-			return "Documentation Contributor";
-		}
-		if (bio.includes('test') || bio.includes('qa') || bio.includes('quality')) {
-			return "QA Contributor";
-		}
+		return "Feature Developer";
 	}
 	
 	// Default roles based on contribution level
@@ -107,8 +99,8 @@ function determineRole(contributor: GitHubContributor, profile?: GitHubUser): st
 	return "Community Contributor";
 }
 
-// Function to determine specialties based on profile and contributions
-function determineSpecialties(contributor: GitHubContributor, profile?: GitHubUser): string[] {
+// Function to determine specialties based on contributions
+function determineSpecialties(contributor: GitHubContributor): string[] {
 	const { login, contributions } = contributor;
 	const specialties: string[] = [];
 	
@@ -126,27 +118,7 @@ function determineSpecialties(contributor: GitHubContributor, profile?: GitHubUs
 		specialties.push("Feature Development");
 	}
 	
-	// Based on profile
-	if (profile?.bio) {
-		const bio = profile.bio.toLowerCase();
-		if (bio.includes('frontend') || bio.includes('ui') || bio.includes('react') || bio.includes('vue')) {
-			specialties.push("Frontend");
-		}
-		if (bio.includes('backend') || bio.includes('api') || bio.includes('server') || bio.includes('node')) {
-			specialties.push("Backend");
-		}
-		if (bio.includes('design') || bio.includes('ux')) {
-			specialties.push("Design");
-		}
-		if (bio.includes('mobile') || bio.includes('android') || bio.includes('ios')) {
-			specialties.push("Mobile");
-		}
-		if (bio.includes('devops') || bio.includes('docker') || bio.includes('kubernetes')) {
-			specialties.push("DevOps");
-		}
-	}
-	
-	// Default specialties if none found
+	// Default specialties based on contribution level
 	if (specialties.length === 0) {
 		if (contributions >= 20) {
 			specialties.push("Code Contributions", "Bug Fixes");
@@ -197,73 +169,27 @@ async function fetchContributors(): Promise<ContributorData[]> {
 
 		const githubContributors: GitHubContributor[] = await contributorsResponse.json();
 		
-		// Fetch detailed profile for each contributor with rate limiting
-		const contributorsWithProfiles = await Promise.all(
-			githubContributors.map(async (contributor, index) => {
-				try {
-					// Add small delay to avoid hitting rate limits too quickly
-					if (index > 0) {
-						await new Promise(resolve => setTimeout(resolve, 100));
-					}
-					
-					const profileResponse = await fetch(
-						`https://api.github.com/users/${contributor.login}`,
-						{ headers }
-					);
-					
-					const profile: GitHubUser | null = profileResponse.ok ? await profileResponse.json() : null;
-					
-					// Log profile fetch status for debugging
-					if (!profileResponse.ok) {
-						console.warn(`Failed to fetch profile for ${contributor.login}: ${profileResponse.status}`);
-					}
-					
-					const contributorData: ContributorData = {
-						name: profile?.name || contributor.login,
-						username: contributor.login,
-						avatar: contributor.avatar_url,
-						role: determineRole(contributor, profile || undefined),
-						contributions: {
-							commits: contributor.contributions,
-							issues: 0, // GitHub API doesn't provide this easily
-							prs: 0,    // Would need separate API call
-							reviews: 0 // Would need separate API call
-						},
-						specialties: determineSpecialties(contributor, profile || undefined),
-						joinedDate: profile?.created_at || new Date().toISOString(),
-						isCore: contributor.contributions >= 50 || contributor.login === GITHUB_OWNER,
-						celestialType: getCelestialType(contributor.contributions)
-					};
-					
-					// Add githubProfile only if it exists
-					if (profile) {
-						contributorData.githubProfile = profile;
-					}
-					
-					return contributorData;
-				} catch (error) {
-					console.warn(`Failed to fetch profile for ${contributor.login}:`, error);
-					
-					// Fallback contributor data
-					return {
-						name: contributor.login,
-						username: contributor.login,
-						avatar: contributor.avatar_url,
-						role: determineRole(contributor),
-						contributions: {
-							commits: contributor.contributions,
-							issues: 0,
-							prs: 0,
-							reviews: 0
-						},
-						specialties: determineSpecialties(contributor),
-						joinedDate: new Date().toISOString(),
-						isCore: contributor.contributions >= 50 || contributor.login === GITHUB_OWNER,
-						celestialType: getCelestialType(contributor.contributions)
-					};
-				}
-			})
-		);
+		// Transform basic contributor data (no need for detailed profiles)
+		const contributorsWithProfiles = githubContributors.map((contributor) => {
+			const contributorData: ContributorData = {
+				name: contributor.login, // Use username as name
+				username: contributor.login,
+				avatar: contributor.avatar_url,
+				role: determineRole(contributor),
+				contributions: {
+					commits: contributor.contributions,
+					issues: 0, // GitHub API doesn't provide this easily
+					prs: 0,    // Would need separate API call
+					reviews: 0 // Would need separate API call
+				},
+				specialties: determineSpecialties(contributor),
+				joinedDate: new Date().toISOString(), // Fallback date
+				isCore: contributor.contributions >= 50 || contributor.login === GITHUB_OWNER,
+				celestialType: getCelestialType(contributor.contributions, contributor.login)
+			};
+			
+			return contributorData;
+		});
 
 		// Update cache
 		contributorsCache = {
@@ -276,43 +202,10 @@ async function fetchContributors(): Promise<ContributorData[]> {
 		
 	} catch (error) {
 		console.error('Failed to fetch contributors from GitHub:', error);
-		console.log('Falling back to hardcoded contributor data...');
+		console.log('Using empty fallback data...');
 		
-		// Enhanced fallback data with more realistic contributors
-		return [
-			{
-				name: "Vedant Asati",
-				username: "vedant-asati03",
-				avatar: "https://github.com/vedant-asati03.png",
-				role: "Creator & Lead Developer",
-				contributions: {
-					commits: 150,
-					issues: 8,
-					prs: 12,
-					reviews: 5
-				},
-				specialties: ["Core Architecture", "Audio Processing", "UI/UX"],
-				joinedDate: "2024-01-15",
-				isCore: true,
-				celestialType: "sun"
-			},
-			{
-				name: "Community Contributor",
-				username: "community-helper",
-				avatar: "https://github.com/github.png",
-				role: "Community Contributor",
-				contributions: {
-					commits: 5,
-					issues: 2,
-					prs: 3,
-					reviews: 1
-				},
-				specialties: ["Bug Reports", "Testing"],
-				joinedDate: "2024-02-01",
-				isCore: false,
-				celestialType: "moon"
-			}
-		];
+		// Return empty array - in a real implementation this could load from a local file or database
+		return [];
 	}
 }
 
@@ -326,7 +219,8 @@ const totalPRs = contributors.reduce((sum, c) => sum + c.contributions.prs, 0);
 
 // Additional GitHub-derived stats
 const coreContributors = contributors.filter(c => c.isCore).length;
-const sunContributors = contributors.filter(c => c.celestialType === 'sun').length;
+const blackholeContributors = contributors.filter(c => c.celestialType === 'blackhole').length;
+const starContributors = contributors.filter(c => c.celestialType === 'star').length;
 const planetContributors = contributors.filter(c => c.celestialType === 'planet').length;
 const moonContributors = contributors.filter(c => c.celestialType === 'moon').length;
 ---
@@ -346,11 +240,14 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 		</div>
 
 		<!-- Interactive Contribution Galaxy -->
-		<div class="mb-16">
-			<h2 class="title text-3xl font-bold mb-8 text-center">
+		<div class="mb-16 relative">
+			<!-- Ambient space glow -->
+			<div class="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/20 to-transparent blur-3xl"></div>
+			
+			<h2 class="title text-3xl font-bold mb-8 text-center relative z-10">
 				Contribution Galaxy
 			</h2>
-			<p class="text-base sm:text-lg text-center mb-8 text-light">
+			<p class="text-base sm:text-lg text-center mb-8 text-light relative z-10">
 				Explore our contributor constellation. Each celestial body represents a team member, 
 				floating through space with their unique contribution energy.
 			</p>
@@ -364,14 +261,23 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 			</div> -->
 
 			<!-- Celestial Categories Legend -->
-			<div class="flex justify-center mb-8 px-2">
-				<div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-8 p-4 rounded-lg bg-black/30 backdrop-blur w-full max-w-2xl">
+			<div class="flex justify-center mb-8 px-2 relative z-10">
+				<div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 p-4 rounded-lg bg-gradient-to-r from-black/20 via-black/30 to-black/20 backdrop-blur-sm border border-white/10 w-full max-w-4xl">
+					<div class="flex items-center gap-2">
+						<div class="w-8 h-8 rounded-full bg-gradient-to-r from-black via-purple-900 to-black border-2 border-purple-500/50 relative">
+							<div class="absolute inset-0 rounded-full animate-pulse bg-purple-400/30"></div>
+							<div class="absolute inset-2 rounded-full bg-black animate-spin border border-purple-500/30"></div>
+						</div>
+						<span class="text-sm text-light">
+							<span class="text-purple-400 font-semibold">Black Hole</span> (Creator)
+						</span>
+					</div>
 					<div class="flex items-center gap-2">
 						<div class="w-6 h-6 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 relative">
 							<div class="absolute inset-0 rounded-full animate-pulse bg-yellow-300/50"></div>
 						</div>
 						<span class="text-sm text-light">
-							<span class="text-yellow-400 font-semibold">Suns</span> (100+ commits)
+							<span class="text-yellow-400 font-semibold">Stars</span> (100+ commits)
 						</span>
 					</div>
 					<div class="flex items-center gap-2">
@@ -388,7 +294,32 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 					</div>
 				</div>
 			</div>
-			<div class="galaxy-container relative rounded-xl overflow-hidden" style="height: 600px;">
+			<div class="galaxy-container relative overflow-hidden" style="height: 600px;">
+				<!-- Galaxy Controls -->
+				<div class="galaxy-controls absolute top-4 right-4 z-20 flex flex-col gap-2">
+					<button 
+						id="zoom-in" 
+						class="w-10 h-10 bg-black/50 hover:bg-black/70 border border-white/20 rounded-lg flex items-center justify-center text-white transition-all"
+						title="Zoom In"
+					>
+						<Icon class="w-5 h-5" name="solar:add-circle-bold" />
+					</button>
+					<button 
+						id="zoom-out" 
+						class="w-10 h-10 bg-black/50 hover:bg-black/70 border border-white/20 rounded-lg flex items-center justify-center text-white transition-all"
+						title="Zoom Out"
+					>
+						<Icon class="w-5 h-5" name="solar:minus-circle-bold" />
+					</button>
+					<button 
+						id="reset-view" 
+						class="w-10 h-10 bg-black/50 hover:bg-black/70 border border-white/20 rounded-lg flex items-center justify-center text-white transition-all"
+						title="Reset View"
+					>
+						<Icon class="w-5 h-5" name="solar:home-2-bold" />
+					</button>
+				</div>
+
 				<!-- Animated Background -->
 				<div class="absolute inset-0 galaxy-bg"></div>
 				
@@ -412,144 +343,153 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 					<!-- Lines will be dynamically drawn here -->
 				</svg>
 
-				<!-- Floating Contributors -->
-				<div class="relative z-10 h-full flex items-center justify-center">
-					{(() => {
-						// Create a proper celestial system with realistic orbits
-						const suns = contributors.filter(c => c.celestialType === 'sun');
+				<!-- Explorable Galaxy Space -->
+				<div 
+					id="galaxy-space" 
+					class="absolute inset-0 w-full h-full"
+					style="
+						transform-origin: center center;
+						transform: scale(1) translate(0px, 0px);
+						transition: transform 0.3s ease-out;
+						cursor: grab;
+					"
+				>
+					<!-- Floating Contributors -->
+					<div class="relative w-full h-full">
+						{(() => {
+							// Create a black hole centered celestial system with aurras-official at center
+							// Find the aurras-official contributor (marked as blackhole type)
+							const blackHole = contributors.find(c => c.celestialType === 'blackhole');
+						
+						const stars = contributors.filter(c => c.celestialType === 'star');
 						const planets = contributors.filter(c => c.celestialType === 'planet');
 						const moons = contributors.filter(c => c.celestialType === 'moon');
 						
 						const celestialBodies: any[] = [];
 						const containerCenter = { x: 300, y: 300 }; // Center of 600px container
 						
-						// Place suns first (stationary at center)
-						suns.forEach((sun, sunIndex) => {
-							// Multiple suns get slight offset from center
-							const offsetAngle = (sunIndex * 360) / suns.length;
-							const offsetRadius = suns.length > 1 ? 40 : 0;
-							const x = containerCenter.x + Math.cos(offsetAngle * Math.PI / 180) * offsetRadius;
-							const y = containerCenter.y + Math.sin(offsetAngle * Math.PI / 180) * offsetRadius;
-							
+						// Place the black hole (Aurras creator) at the absolute center
+						if (blackHole) {
 							celestialBodies.push({
-								contributor: sun,
-								celestialClass: 'celestial-sun',
+								contributor: blackHole,
+								celestialClass: 'celestial-blackhole',
 								orbitRadius: 0,
 								isStationary: true,
-								position: { x, y },
-								orbitCenter: { x, y }
+								position: containerCenter,
+								orbitCenter: containerCenter,
+								startAngle: 0,
+								orbitalPeriod: 0
+							});
+						}
+						
+						// Place stars in close, strong orbits around the black hole
+						stars.forEach((star, starIndex) => {
+							const baseRadius = contributors.length > 10 ? 180 : 150; // Increased distance from black hole
+							const orbitRadius = baseRadius + (starIndex * (contributors.length > 20 ? 60 : 40)); // Increased spacing
+							const startAngle = (starIndex * 72) % 360; // Evenly distributed
+							const orbitalPeriod = 30 + (orbitRadius / 10); // Fast, strong orbits
+							
+							celestialBodies.push({
+								contributor: star,
+								celestialClass: 'celestial-star',
+								orbitRadius,
+								parentType: 'blackhole',
+								orbitCenter: containerCenter,
+								isStationary: false,
+								startAngle,
+								orbitalPeriod
 							});
 						});
 						
-						// Place planets orbiting around suns
+						// Place planets in medium orbits - they orbit around stars or black hole
 						planets.forEach((planet, planetIndex) => {
-							// Safe access to parent sun with null checking
-							const sunIndex = planetIndex % suns.length;
-							const parentSun = suns.length > 0 ? suns[sunIndex] : null;
-							
-							// If we have a valid parent sun, use its position as orbit center
 							let parentCenter = containerCenter;
-							if (parentSun) {
-								const parentIndex = celestialBodies.findIndex(body => body.contributor === parentSun);
-								if (parentIndex >= 0) {
-									parentCenter = celestialBodies[parentIndex].orbitCenter || containerCenter;
+							let parentType = 'blackhole';
+							let baseOrbitRadius = contributors.length > 15 ? 300 : 250; // Increased base radius for planets around black hole
+							
+							// If there are stars, some planets can orbit around them
+							if (stars.length > 0 && planetIndex % 2 === 0) {
+								const parentstar = stars[planetIndex % stars.length];
+								const parentstarBody = celestialBodies.find(b => b.contributor === parentstar);
+								if (parentstarBody) {
+									parentCenter = parentstarBody.orbitCenter;
+									parentType = 'star';
+									baseOrbitRadius = contributors.length > 20 ? 100 : 80; // Increased orbit around stars
 								}
 							}
 							
-							const orbitRadius = 80 + (planetIndex * 25);
+							const orbitRadius = baseOrbitRadius + (planetIndex * (contributors.length > 25 ? 60 : 45)); // Increased spacing
+							const startAngle = (planetIndex * 137.5) % 360; // Golden angle
+							const orbitalPeriod = 50 + (orbitRadius / 12); // Medium speed
 							
 							celestialBodies.push({
 								contributor: planet,
 								celestialClass: 'celestial-planet',
 								orbitRadius,
-								parentType: 'sun',
+								parentType,
 								orbitCenter: parentCenter,
-								isStationary: false
+								isStationary: false,
+								startAngle,
+								orbitalPeriod
 							});
 						});
 						
-						// Place moons orbiting around planets (or suns if no planets)
+						// Place moons in outer, slow orbits - they orbit around planets or distant from center
 						moons.forEach((moon, moonIndex) => {
+							let parentCenter = containerCenter;
+							let parentType = 'blackhole';
+							let baseOrbitRadius = contributors.length > 20 ? 400 : 350; // Increased base radius for moons around black hole
+							
+							// Moons can orbit around planets if available
 							if (planets.length > 0) {
-								// Orbit around planets
-								const planetIndex = moonIndex % planets.length;
-								const parentPlanet = planets[planetIndex];
-								
-								// Find the parent planet in celestial bodies
-								let parentCenter = containerCenter;
-								if (parentPlanet) {
-									const parentPlanetIndex = celestialBodies.findIndex(b => 
-										b.contributor && b.contributor === parentPlanet
-									);
-									if (parentPlanetIndex >= 0) {
-										parentCenter = celestialBodies[parentPlanetIndex]?.orbitCenter || containerCenter;
-									}
+								const parentPlanet = planets[moonIndex % planets.length];
+								const parentPlanetBody = celestialBodies.find(b => b.contributor === parentPlanet);
+								if (parentPlanetBody) {
+									parentCenter = parentPlanetBody.orbitCenter;
+									parentType = 'planet';
+									baseOrbitRadius = 60; // Increased distance from planets
 								}
-								
-								const orbitRadius = 35 + (moonIndex % 3) * 15; // Closer orbit around planets
-								
-								celestialBodies.push({
-									contributor: moon,
-									celestialClass: 'celestial-moon',
-									orbitRadius,
-									parentType: 'planet',
-									orbitCenter: parentCenter,
-									isStationary: false
-								});
-							} else if (suns.length > 0) {
-								// Orbit around suns if no planets
-								const sunIndex = moonIndex % suns.length;
-								const parentSun = suns[sunIndex];
-								
-								// Find the parent sun in celestial bodies
-								let parentCenter = containerCenter;
-								if (parentSun) {
-									const parentSunIndex = celestialBodies.findIndex(b => 
-										b.contributor && b.contributor === parentSun
-									);
-									if (parentSunIndex >= 0) {
-										parentCenter = celestialBodies[parentSunIndex]?.orbitCenter || containerCenter;
-									}
-								}
-								
-								const orbitRadius = 100 + (moonIndex * 20);
-								
-								celestialBodies.push({
-									contributor: moon,
-									celestialClass: 'celestial-moon',
-									orbitRadius,
-									parentType: 'sun',
-									orbitCenter: parentCenter,
-									isStationary: false
-								});
-							} else {
-								// Fallback to center if no suns or planets
-								celestialBodies.push({
-									contributor: moon,
-									celestialClass: 'celestial-moon',
-									orbitRadius: 60 + (moonIndex * 20),
-									parentType: 'none',
-									orbitCenter: containerCenter,
-									isStationary: false
-								});
 							}
+							
+							const orbitRadius = baseOrbitRadius + (moonIndex * 35); // Increased spacing between moons
+							const startAngle = (moonIndex * 120 + moonIndex * 45) % 360; // Scattered distribution
+							const orbitalPeriod = 70 + (orbitRadius / 8); // Slow, weak orbits
+							
+							celestialBodies.push({
+								contributor: moon,
+								celestialClass: 'celestial-moon',
+								orbitRadius,
+								parentType,
+								orbitCenter: parentCenter,
+								isStationary: false,
+								startAngle,
+								orbitalPeriod
+							});
 						});
 						
 						return celestialBodies;
 					})().map((body, index) => {
-						const { contributor, celestialClass, orbitRadius, isStationary, position, orbitCenter } = body;
+						const { contributor, celestialClass, orbitRadius, isStationary, position, orbitCenter, startAngle, orbitalPeriod } = body;
 						
-						// Calculate positioning
+						// Calculate positioning with proper offsets for each celestial type
 						let positionStyle = '';
+						let offset = 30; // Default offset for center positioning
+						
+						// Adjust offset based on celestial type size
+						if (contributor.celestialType === 'blackhole') offset = 50; // 100px / 2
+						else if (contributor.celestialType === 'sun') offset = 40;    // 80px / 2  
+						else if (contributor.celestialType === 'planet') offset = 30; // 60px / 2
+						else if (contributor.celestialType === 'moon') offset = 20;   // 40px / 2
+						
 						if (isStationary && position) {
-							// Stationary suns at their assigned position
-							positionStyle = `left: ${position.x - 45}px; top: ${position.y - 45}px;`;
+							// Stationary bodies at their assigned position
+							positionStyle = `left: ${position.x - offset}px; top: ${position.y - offset}px;`;
 						} else if (orbitCenter) {
 							// Orbiting bodies - positioned at their orbit center, CSS animation handles the actual orbit
-							positionStyle = `left: ${orbitCenter.x - 35}px; top: ${orbitCenter.y - 35}px;`;
+							positionStyle = `left: ${orbitCenter.x - offset}px; top: ${orbitCenter.y - offset}px;`;
 						} else {
 							// Fallback to center
-							positionStyle = 'left: calc(50% - 40px); top: calc(50% - 40px);';
+							positionStyle = `left: calc(50% - ${offset}px); top: calc(50% - ${offset}px);`;
 						}
 						
 						return (
@@ -557,10 +497,12 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 								class={`floating-contributor ${celestialClass}`}
 								style={`
 									${positionStyle}
-									animation-delay: ${index * 0.3}s;
+									animation-delay: ${startAngle ? (startAngle / 360) * (orbitalPeriod || 40) : index * 0.3}s;
 									--orbit-radius: ${orbitRadius}px;
 									--orbit-center-x: ${orbitCenter?.x || 300}px;
 									--orbit-center-y: ${orbitCenter?.y || 300}px;
+									--orbital-period: ${orbitalPeriod || 40}s;
+									--start-angle: ${startAngle || 0}deg;
 								`}
 								data-contributor-id={index}
 								data-commits={contributor.contributions.commits}
@@ -597,10 +539,16 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 											</div>
 											<div class="ml-auto flex gap-2">
 												<!-- Celestial Type Badge -->
-												{contributor.celestialType === 'sun' && (
+												{contributor.celestialType === 'blackhole' && (
+													<div class="px-2 py-1 bg-purple-500/20 text-purple-400 rounded-full text-xs font-medium flex items-center gap-1">
+														<Icon class="h-3 w-3" name="solar:tornado-bold" />
+														Black Hole
+													</div>
+												)}
+												{contributor.celestialType === 'star' && (
 													<div class="px-2 py-1 bg-yellow-400/20 text-yellow-400 rounded-full text-xs font-medium flex items-center gap-1">
-														<Icon class="h-3 w-3" name="solar:sun-bold" />
-														Sun
+														<Icon class="h-3 w-3" name="solar:star-bold" />
+														star
 													</div>
 												)}
 												{contributor.celestialType === 'planet' && (
@@ -653,20 +601,12 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 										</div>
 
 										<!-- GitHub Profile Info -->
-										{contributor.githubProfile?.bio && (
-											<div class="mb-3">
-												<p class="text-xs text-light italic">"{contributor.githubProfile.bio}"</p>
-											</div>
-										)}
-
-										{contributor.githubProfile?.location && (
-											<div class="mb-3">
-												<span class="text-xs text-light flex items-center gap-1">
-													<Icon class="h-3 w-3" name="solar:map-point-bold" />
-													{contributor.githubProfile.location}
-												</span>
-											</div>
-										)}
+										<div class="mb-3">
+											<span class="text-xs text-light flex items-center gap-1">
+												<Icon class="h-3 w-3" name="solar:user-bold" />
+												GitHub Contributor
+											</span>
+										</div>
 
 										<!-- Specialties -->
 										<div class="mb-3">
@@ -687,15 +627,6 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 							<Icon class="w-4 h-4" name="solar:link-bold" />
 							View GitHub Profile
 						</a>
-
-						<!-- Member since -->
-						{contributor.githubProfile?.created_at && (
-							<div class="mt-2 pt-2 border-t border-white/10">
-								<span class="text-xs text-light">
-									GitHub member since {new Date(contributor.githubProfile.created_at).getFullYear()}
-								</span>
-							</div>
-						)}
 									</div>
 								</div>
 
@@ -711,6 +642,7 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 							</div>
 						);
 					})}
+					</div>
 				</div>
 
 			</div>
@@ -752,26 +684,51 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 <style>
 	/* Galaxy Container */
 	.galaxy-container {
-		background: radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 35%, #0f172a 100%);
-		border: 1px solid rgba(139, 92, 246, 0.3);
+		background: 
+			radial-gradient(ellipse at center, rgba(26, 26, 46, 0.8) 0%, rgba(22, 33, 62, 0.6) 35%, rgba(15, 23, 42, 0.4) 70%, transparent 100%),
+			linear-gradient(to bottom, transparent 0%, rgba(15, 23, 42, 0.1) 50%, transparent 100%);
+		border: none;
 		position: relative;
 		overflow: hidden;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		mask: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+		-webkit-mask: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
 	}
 
-	/* Animated Background */
+	/* Kurzgesagt-style Animated Background */
 	.galaxy-bg {
 		background: 
-			radial-gradient(2px 2px at 20px 30px, rgba(139, 92, 246, 0.8), transparent),
-			radial-gradient(2px 2px at 40px 70px, rgba(59, 130, 246, 0.6), transparent),
-			radial-gradient(1px 1px at 90px 40px, rgba(34, 197, 94, 0.4), transparent),
-			radial-gradient(1px 1px at 130px 80px, rgba(251, 191, 36, 0.3), transparent),
-			radial-gradient(2px 2px at 160px 30px, rgba(236, 72, 153, 0.5), transparent);
-		background-repeat: repeat;
-		background-size: 200px 100px;
-		animation: twinkle 8s ease-in-out infinite alternate;
+			/* Random scattered star field - no grid pattern */
+			radial-gradient(1px 1px at 23% 17%, rgba(255, 224, 102, 0.9), transparent 2px),
+			radial-gradient(2px 2px at 67% 31%, rgba(255, 107, 107, 0.7), transparent 3px),
+			radial-gradient(1px 1px at 89% 43%, rgba(69, 183, 209, 0.6), transparent 2px),
+			radial-gradient(1.5px 1.5px at 12% 76%, rgba(78, 205, 196, 0.5), transparent 2px),
+			radial-gradient(1px 1px at 45% 89%, rgba(150, 206, 180, 0.4), transparent 2px),
+			radial-gradient(2px 2px at 78% 21%, rgba(255, 234, 167, 0.8), transparent 3px),
+			radial-gradient(1px 1px at 34% 55%, rgba(255, 193, 7, 0.6), transparent 2px),
+			radial-gradient(1.5px 1.5px at 91% 67%, rgba(255, 152, 0, 0.5), transparent 2px),
+			radial-gradient(1px 1px at 15% 38%, rgba(220, 231, 117, 0.4), transparent 2px),
+			radial-gradient(2px 2px at 56% 14%, rgba(255, 107, 107, 0.6), transparent 3px),
+			radial-gradient(1px 1px at 82% 85%, rgba(69, 183, 209, 0.5), transparent 2px),
+			radial-gradient(1px 1px at 29% 92%, rgba(150, 206, 180, 0.3), transparent 2px),
+			/* Kurzgesagt nebula colors */
+			linear-gradient(135deg, 
+				rgba(255, 107, 107, 0.08) 0%, 
+				rgba(69, 183, 209, 0.12) 25%, 
+				rgba(78, 205, 196, 0.08) 50%, 
+				rgba(255, 224, 102, 0.1) 75%, 
+				rgba(150, 206, 180, 0.06) 100%),
+			/* Deep space gradient */
+			radial-gradient(ellipse at center, 
+				rgba(18, 18, 52, 0.9) 0%, 
+				rgba(13, 13, 35, 0.95) 40%, 
+				rgba(8, 8, 20, 1) 100%);
+		background-size: 100% 100%;
+		background-repeat: no-repeat;
+		animation: kurzgesagt-space-twinkle 10s ease-in-out infinite alternate,
+		           kurzgesagt-space-gentle-drift 120s linear infinite;
 	}
 
 	@keyframes twinkle {
@@ -819,47 +776,127 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
-	/* Celestial Type Specific Styles with realistic orbital mechanics */
-	.celestial-sun {
-		animation: gentle-float 8s ease-in-out infinite alternate, sun-pulse 4s ease-in-out infinite;
+	/* Celestial Type Specific Styles with Kurzgesagt-style animations */
+	.celestial-blackhole {
+		animation: kurzgesagt-blackhole-spin 20s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite, 
+		           kurzgesagt-blackhole-gravity 12s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite alternate,
+		           kurzgesagt-blackhole-distort 6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 		position: absolute;
+		z-index: 20;
+		filter: drop-shadow(0 0 40px rgba(255, 140, 0, 0.9)) 
+		        drop-shadow(0 0 80px rgba(255, 193, 7, 0.6)) 
+		        drop-shadow(0 0 120px rgba(138, 43, 226, 0.4));
+		transform-origin: center center;
+	}
+
+	.celestial-star {
+		animation: kurzgesagt-star-twinkle 2.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite,
+		           kurzgesagt-gentle-bounce 5s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite alternate,
+		           kurzgesagt-star-pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+		position: absolute;
+		filter: drop-shadow(0 0 15px rgba(255, 224, 102, 0.8)) drop-shadow(0 0 30px rgba(255, 107, 107, 0.5));
 	}
 
 	.celestial-planet {
-		animation: planet-orbit 40s infinite linear, gentle-float 6s ease-in-out infinite alternate;
+		animation: kurzgesagt-planet-orbit 50s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite linear, 
+		           kurzgesagt-gentle-bounce 7s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite alternate,
+		           kurzgesagt-planet-wobble 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
 		position: absolute;
 		transform-origin: center center;
+		filter: drop-shadow(0 0 12px rgba(69, 183, 209, 0.6)) drop-shadow(0 0 20px rgba(78, 205, 196, 0.4));
 	}
 
 	.celestial-moon {
-		animation: moon-orbit 20s infinite linear, gentle-float 4s ease-in-out infinite alternate;
+		animation: kurzgesagt-moon-float 60s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite linear,
+		           kurzgesagt-gentle-bounce 9s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite alternate,
+		           kurzgesagt-moon-shimmer 5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 		position: absolute;
 		transform-origin: center center;
+		filter: drop-shadow(0 0 8px rgba(150, 206, 180, 0.5)) drop-shadow(0 0 15px rgba(255, 234, 167, 0.3));
 	}
 
-	/* Sun Animations - Gentle floating and pulsing */
-	@keyframes sun-pulse {
+	/* Black Hole Animations - Intense gravitational effects */
+	@keyframes kurzgesagt-blackhole-spin {
+		0% { transform: rotate(0deg) scale(1); }
+		25% { transform: rotate(90deg) scale(1.05); }
+		50% { transform: rotate(180deg) scale(1.1); }
+		75% { transform: rotate(270deg) scale(1.05); }
+		100% { transform: rotate(360deg) scale(1); }
+	}
+
+	@keyframes kurzgesagt-blackhole-gravity {
+		0% { 
+			filter: brightness(0.9) contrast(1.2) saturate(1.3);
+			box-shadow: 0 0 60px rgba(255, 140, 0, 0.7), 
+			           0 0 100px rgba(255, 193, 7, 0.5),
+			           inset 0 0 40px rgba(0, 0, 0, 0.8);
+		}
+		50% { 
+			filter: brightness(1.1) contrast(1.5) saturate(1.6);
+			box-shadow: 0 0 80px rgba(255, 140, 0, 0.9), 
+			           0 0 130px rgba(255, 193, 7, 0.7),
+			           0 0 180px rgba(138, 43, 226, 0.4),
+			           inset 0 0 60px rgba(0, 0, 0, 1);
+		}
+		100% { 
+			filter: brightness(0.9) contrast(1.2) saturate(1.3);
+			box-shadow: 0 0 60px rgba(255, 140, 0, 0.7), 
+			           0 0 100px rgba(255, 193, 7, 0.5),
+			           inset 0 0 40px rgba(0, 0, 0, 0.8);
+		}
+	}
+
+	@keyframes kurzgesagt-blackhole-distort {
+		0%, 100% { 
+			transform: perspective(300px) rotateX(0deg) rotateY(0deg); 
+		}
+		25% { 
+			transform: perspective(300px) rotateX(2deg) rotateY(1deg); 
+		}
+		50% { 
+			transform: perspective(300px) rotateX(0deg) rotateY(2deg); 
+		}
+		75% { 
+			transform: perspective(300px) rotateX(-1deg) rotateY(0deg); 
+		}
+	}
+
+	@keyframes accretion-disk-spin {
+		0% { transform: rotate(0deg); }
+		100% { transform: rotate(360deg); }
+	}
+
+	@keyframes gravitational-field-spin {
+		0% { transform: rotate(0deg) scale(1); }
+		25% { transform: rotate(90deg) scale(1.1); }
+		50% { transform: rotate(180deg) scale(1.2); }
+		75% { transform: rotate(270deg) scale(1.1); }
+		100% { transform: rotate(360deg) scale(1); }
+	}
+
+	/* star Animations - Gentle floating and pulsing */
+	@keyframes star-pulse {
 		0%, 100% { transform: scale(1); }
 		50% { transform: scale(1.05); }
 	}
 
-	/* Planet Animations - Orbit around their assigned sun */
+	/* Planet Animations - Orbit around their assigned star with variable periods */
 	@keyframes planet-orbit {
 		0% { 
-			transform: rotate(0deg) translateX(var(--orbit-radius, 80px)) rotate(0deg);
+			transform: rotate(var(--start-angle, 0deg)) translateX(var(--orbit-radius, 80px)) rotate(calc(-1 * var(--start-angle, 0deg)));
 		}
 		100% { 
-			transform: rotate(360deg) translateX(var(--orbit-radius, 80px)) rotate(-360deg);
+			transform: rotate(calc(var(--start-angle, 0deg) + 360deg)) translateX(var(--orbit-radius, 80px)) rotate(calc(-1 * (var(--start-angle, 0deg) + 360deg)));
 		}
 	}
 
-	/* Moon Animations - Faster orbit around their assigned planet/sun */
+	/* Moon Animations - Faster orbit around their assigned planet/star with variable periods */
 	@keyframes moon-orbit {
 		0% { 
-			transform: rotate(0deg) translateX(var(--orbit-radius, 40px)) rotate(0deg);
+			transform: rotate(var(--start-angle, 0deg)) translateX(var(--orbit-radius, 40px)) rotate(calc(-1 * var(--start-angle, 0deg)));
 		}
 		100% { 
-			transform: rotate(360deg) translateX(var(--orbit-radius, 40px)) rotate(-360deg);
+			transform: rotate(calc(var(--start-angle, 0deg) + 360deg)) translateX(var(--orbit-radius, 40px)) rotate(calc(-1 * (var(--start-angle, 0deg) + 360deg)));
 		}
 	}
 
@@ -873,13 +910,299 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 		}
 	}
 
+	/* Kurzgesagt-style Keyframe Animations */
+	
+	/* Black Hole Animations - Hypnotic spinning with gravitational pull */
+	@keyframes kurzgesagt-blackhole-spin {
+		0% { 
+			transform: rotate(0deg) scale(1);
+			filter: brightness(0.8) contrast(1.5) hue-rotate(0deg);
+		}
+		25% { 
+			transform: rotate(90deg) scale(1.05);
+			filter: brightness(0.9) contrast(1.8) hue-rotate(15deg);
+		}
+		50% { 
+			transform: rotate(180deg) scale(1.1);
+			filter: brightness(1) contrast(2) hue-rotate(30deg);
+		}
+		75% { 
+			transform: rotate(270deg) scale(1.05);
+			filter: brightness(0.9) contrast(1.8) hue-rotate(15deg);
+		}
+		100% { 
+			transform: rotate(360deg) scale(1);
+			filter: brightness(0.8) contrast(1.5) hue-rotate(0deg);
+		}
+	}
+
+	@keyframes kurzgesagt-blackhole-gravity {
+		0%, 100% { 
+			box-shadow: 0 0 50px rgba(255, 140, 0, 0.6), 
+			           0 0 100px rgba(147, 51, 234, 0.4),
+			           inset 0 0 30px rgba(139, 92, 246, 0.3);
+		}
+		50% { 
+			box-shadow: 0 0 80px rgba(255, 140, 0, 0.9), 
+			           0 0 150px rgba(147, 51, 234, 0.6),
+			           inset 0 0 50px rgba(139, 92, 246, 0.5);
+		}
+	}
+
+	/* Star Animations - Bright twinkling with cheerful bounce */
+	@keyframes kurzgesagt-star-twinkle {
+		0%, 100% { 
+			transform: scale(1) rotate(0deg);
+			filter: brightness(1) saturate(1.2);
+			box-shadow: 0 0 15px rgba(255, 224, 102, 0.8),
+			           0 0 30px rgba(255, 107, 107, 0.5);
+		}
+		25% { 
+			transform: scale(1.15) rotate(5deg);
+			filter: brightness(1.3) saturate(1.5);
+			box-shadow: 0 0 25px rgba(255, 224, 102, 1),
+			           0 0 45px rgba(255, 107, 107, 0.7);
+		}
+		50% { 
+			transform: scale(1.2) rotate(0deg);
+			filter: brightness(1.4) saturate(1.6);
+			box-shadow: 0 0 30px rgba(255, 224, 102, 1.2),
+			           0 0 50px rgba(255, 107, 107, 0.8);
+		}
+		75% { 
+			transform: scale(1.15) rotate(-5deg);
+			filter: brightness(1.3) saturate(1.5);
+			box-shadow: 0 0 25px rgba(255, 224, 102, 1),
+			           0 0 45px rgba(255, 107, 107, 0.7);
+		}
+	}
+
+	@keyframes kurzgesagt-star-pulse {
+		0%, 100% { transform: scale(1); opacity: 1; }
+		25% { transform: scale(1.05); opacity: 0.9; }
+		50% { transform: scale(1.1); opacity: 0.8; }
+		75% { transform: scale(1.05); opacity: 0.9; }
+	}
+
+	/* Planet Animations - Smooth orbital motion with gentle wobble */
+	@keyframes kurzgesagt-planet-orbit {
+		0% { 
+			transform: rotate(var(--start-angle, 0deg)) translateX(var(--orbit-radius, 80px)) rotate(calc(-1 * var(--start-angle, 0deg)));
+		}
+		100% { 
+			transform: rotate(calc(var(--start-angle, 0deg) + 360deg)) translateX(var(--orbit-radius, 80px)) rotate(calc(-1 * (var(--start-angle, 0deg) + 360deg)));
+		}
+	}
+
+	@keyframes kurzgesagt-planet-wobble {
+		0%, 100% { 
+			transform: scale(1) skewX(0deg);
+			filter: brightness(1) saturate(1.2);
+		}
+		25% { 
+			transform: scale(1.03) skewX(1deg);
+			filter: brightness(1.1) saturate(1.3);
+		}
+		50% { 
+			transform: scale(1.05) skewX(0deg);
+			filter: brightness(1.15) saturate(1.4);
+		}
+		75% { 
+			transform: scale(1.03) skewX(-1deg);
+			filter: brightness(1.1) saturate(1.3);
+		}
+	}
+
+	/* Moon Animations - Delicate floating with shimmer */
+	@keyframes kurzgesagt-moon-float {
+		0% { 
+			transform: rotate(var(--start-angle, 0deg)) translateX(var(--orbit-radius, 120px)) rotate(calc(-1 * var(--start-angle, 0deg)));
+		}
+		100% { 
+			transform: rotate(calc(var(--start-angle, 0deg) + 360deg)) translateX(var(--orbit-radius, 120px)) rotate(calc(-1 * (var(--start-angle, 0deg) + 360deg)));
+		}
+	}
+
+	@keyframes kurzgesagt-moon-shimmer {
+		0%, 100% { 
+			filter: brightness(1) saturate(1) hue-rotate(0deg);
+			transform: scale(1);
+		}
+		33% { 
+			filter: brightness(1.2) saturate(1.3) hue-rotate(10deg);
+			transform: scale(1.02);
+		}
+		66% { 
+			filter: brightness(1.1) saturate(1.2) hue-rotate(5deg);
+			transform: scale(1.01);
+		}
+	}
+
+	/* Universal Gentle Bounce - Kurzgesagt's signature bouncy movement */
+	@keyframes kurzgesagt-gentle-bounce {
+		0%, 100% { 
+			transform: translateY(0px);
+		}
+		25% { 
+			transform: translateY(-8px);
+		}
+		50% { 
+			transform: translateY(-12px);
+		}
+		75% { 
+			transform: translateY(-6px);
+		}
+	}
+
+	/* Kurzgesagt Space Background Animations */
+	@keyframes kurzgesagt-space-twinkle {
+		0%, 100% { 
+			filter: brightness(1) saturate(1.2) contrast(1.1);
+			opacity: 0.8;
+		}
+		25% { 
+			filter: brightness(1.3) saturate(1.5) contrast(1.3);
+			opacity: 0.9;
+		}
+		50% { 
+			filter: brightness(1.5) saturate(1.8) contrast(1.5);
+			opacity: 1;
+		}
+		75% { 
+			filter: brightness(1.2) saturate(1.4) contrast(1.2);
+			opacity: 0.85;
+		}
+	}
+
+	@keyframes kurzgesagt-space-drift {
+		0% { background-position: 0% 0%, 20% 20%, 40% 40%, 60% 60%; }
+		25% { background-position: 10% 5%, 30% 25%, 50% 45%, 70% 65%; }
+		50% { background-position: 20% 10%, 40% 30%, 60% 50%, 80% 70%; }
+		75% { background-position: 30% 15%, 50% 35%, 70% 55%, 90% 75%; }
+		100% { background-position: 40% 20%, 60% 40%, 80% 60%, 100% 80%; }
+	}
+
+	/* Gentle space drift animation */
+	@keyframes kurzgesagt-space-gentle-drift {
+		0%, 100% { 
+			transform: translateX(0px) translateY(0px);
+		}
+		25% { 
+			transform: translateX(2px) translateY(-1px);
+		}
+		50% { 
+			transform: translateX(-1px) translateY(2px);
+		}
+		75% { 
+			transform: translateX(1px) translateY(1px);
+		}
+	}
+
+	/* Kurzgesagt Glow Animations */
+	@keyframes kurzgesagt-glow-pulse {
+		0%, 100% { 
+			transform: scale(1);
+			opacity: 0.7;
+		}
+		50% { 
+			transform: scale(1.1);
+			opacity: 1;
+		}
+	}
+
+	@keyframes kurzgesagt-blackhole-glow {
+		0%, 100% { 
+			transform: scale(1) rotate(0deg);
+			filter: blur(2px) brightness(1);
+		}
+		33% { 
+			transform: scale(1.2) rotate(120deg);
+			filter: blur(3px) brightness(1.3);
+		}
+		66% { 
+			transform: scale(1.1) rotate(240deg);
+			filter: blur(2.5px) brightness(1.1);
+		}
+	}
+
+	@keyframes kurzgesagt-star-glow {
+		0%, 100% { 
+			transform: scale(1);
+			filter: blur(1px) brightness(1);
+		}
+		25% { 
+			transform: scale(1.3);
+			filter: blur(2px) brightness(1.5);
+		}
+		75% { 
+			transform: scale(1.1);
+			filter: blur(1.5px) brightness(1.2);
+		}
+	}
+
+	@keyframes kurzgesagt-planet-glow {
+		0%, 100% { 
+			transform: scale(1);
+			filter: blur(2px) brightness(1) hue-rotate(0deg);
+		}
+		50% { 
+			transform: scale(1.15);
+			filter: blur(3px) brightness(1.2) hue-rotate(15deg);
+		}
+	}
+
+	@keyframes kurzgesagt-moon-glow {
+		0%, 100% { 
+			transform: scale(1);
+			filter: blur(1px) brightness(1) saturate(1);
+		}
+		50% { 
+			transform: scale(1.05);
+			filter: blur(2px) brightness(1.1) saturate(1.3);
+		}
+	}
+
+	/* Kurzgesagt Black Hole Swirl Animation */
+	@keyframes kurzgesagt-blackhole-swirl {
+		0% { 
+			transform: rotate(0deg) scale(1);
+			opacity: 0.7;
+		}
+		25% { 
+			transform: rotate(90deg) scale(1.1);
+			opacity: 0.9;
+		}
+		50% { 
+			transform: rotate(180deg) scale(0.9);
+			opacity: 1;
+		}
+		75% { 
+			transform: rotate(270deg) scale(1.05);
+			opacity: 0.8;
+		}
+		100% { 
+			transform: rotate(360deg) scale(1);
+			opacity: 0.7;
+		}
+	}
+
 	/* Override floating animation for orbiting bodies to work with orbital transforms */
+	.celestial-blackhole {
+		animation: blackhole-pulse 6s ease-in-out infinite, blackhole-gravity 8s ease-in-out infinite alternate;
+		position: absolute;
+		z-index: 20;
+	}
+
+	.celestial-star {
+		animation: planet-orbit var(--orbital-period, 30s) infinite linear;
+	}
+
 	.celestial-planet {
-		animation: planet-orbit 40s infinite linear;
+		animation: planet-orbit var(--orbital-period, 50s) infinite linear;
 	}
 
 	.celestial-moon {
-		animation: moon-orbit 20s infinite linear;
+		animation: moon-orbit var(--orbital-period, 70s) infinite linear;
 	}
 
 	/* Contributor Orb */
@@ -891,19 +1214,25 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 	}
 
 	/* Celestial Type Specific Orb Sizes */
+	.celestial-blackhole .contributor-orb {
+		width: 100px;  /* Largest - Black Hole */
+		height: 100px;
+	}
+
+	.celestial-star .contributor-orb,
 	.celestial-sun .contributor-orb {
-		width: 90px;
-		height: 90px;
+		width: 80px;   /* Second largest - Stars/Suns */
+		height: 80px;
 	}
 
 	.celestial-planet .contributor-orb {
-		width: 70px;
-		height: 70px;
+		width: 60px;   /* Third largest - Planets */
+		height: 60px;
 	}
 
 	.celestial-moon .contributor-orb {
-		width: 50px;
-		height: 50px;
+		width: 40px;   /* Smallest - Moons */
+		height: 40px;
 	}
 
 	.floating-contributor.large .contributor-orb {
@@ -914,35 +1243,67 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 	.orb-glow {
 		position: absolute;
 		inset: -8px;
-		background: radial-gradient(circle, rgba(139, 92, 246, 0.6) 0%, rgba(139, 92, 246, 0.2) 40%, transparent 70%);
+		background: radial-gradient(circle, rgba(255, 224, 102, 0.7) 0%, rgba(255, 107, 107, 0.4) 40%, transparent 70%);
 		border-radius: 50%;
-		animation: pulse-glow 3s ease-in-out infinite;
-		filter: blur(4px);
+		animation: kurzgesagt-glow-pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+		filter: blur(2px);
 	}
 
-	/* Celestial Type Specific Glows */
-	.celestial-sun .orb-glow {
-		background: radial-gradient(circle, rgba(251, 191, 36, 0.9) 0%, rgba(249, 115, 22, 0.6) 40%, transparent 70%);
-		animation: pulse-sun 2s ease-in-out infinite;
-		filter: blur(6px);
+	/* Kurzgesagt-style Celestial Type Specific Glows */
+	.celestial-blackhole .orb-glow {
+		background: radial-gradient(circle, 
+			rgba(255, 140, 0, 0.9) 0%, 
+			rgba(147, 51, 234, 0.6) 30%, 
+			rgba(139, 92, 246, 0.4) 50%, 
+			transparent 70%);
+		inset: -15px;
+		animation: kurzgesagt-blackhole-glow 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+	}
+
+	.celestial-star .orb-glow {
+		background: radial-gradient(circle, 
+			rgba(255, 224, 102, 1) 0%, 
+			rgba(255, 107, 107, 0.8) 30%, 
+			rgba(255, 193, 7, 0.5) 50%, 
+			transparent 70%);
 		inset: -12px;
+		animation: kurzgesagt-star-glow 2.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
 	}
 
 	.celestial-planet .orb-glow {
-		background: radial-gradient(circle, rgba(59, 130, 246, 0.8) 0%, rgba(139, 92, 246, 0.4) 40%, transparent 70%);
-		animation: pulse-planet 3s ease-in-out infinite;
-		filter: blur(5px);
+		background: radial-gradient(circle, 
+			rgba(69, 183, 209, 0.9) 0%, 
+			rgba(78, 205, 196, 0.6) 40%, 
+			rgba(45, 183, 245, 0.4) 60%, 
+			transparent 75%);
 		inset: -10px;
+		animation: kurzgesagt-planet-glow 3.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
 	}
 
 	.celestial-moon .orb-glow {
-		background: radial-gradient(circle, rgba(156, 163, 175, 0.6) 0%, rgba(107, 114, 128, 0.3) 40%, transparent 70%);
-		animation: pulse-moon 4s ease-in-out infinite;
-		filter: blur(3px);
-		inset: -6px;
+		background: radial-gradient(circle, 
+			rgba(150, 206, 180, 0.8) 0%, 
+			rgba(255, 234, 167, 0.5) 40%, 
+			rgba(220, 231, 117, 0.3) 60%, 
+			transparent 75%);
+		inset: -8px;
+		animation: kurzgesagt-moon-glow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 	}
 
-	@keyframes pulse-sun {
+	@keyframes blackhole-swirl {
+		0% { transform: rotate(0deg) scale(1); }
+		50% { transform: rotate(180deg) scale(1.2); }
+		100% { transform: rotate(360deg) scale(1); }
+	}
+
+	@keyframes pulse-blackhole {
+		0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+		25% { transform: scale(1.4) rotate(90deg); opacity: 0.8; }
+		50% { transform: scale(1.6) rotate(180deg); opacity: 1; }
+		75% { transform: scale(1.4) rotate(270deg); opacity: 0.8; }
+	}
+
+	@keyframes pulse-star {
 		0%, 100% { transform: scale(1); opacity: 0.9; }
 		50% { transform: scale(1.3); opacity: 1; }
 	}
@@ -977,23 +1338,91 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 		overflow: hidden;
 	}
 
-	/* Celestial Type Specific Core Styles */
-	.celestial-sun .orb-core {
-		background: linear-gradient(135deg, rgba(251, 191, 36, 1), rgba(249, 115, 22, 0.9));
-		border: 3px solid rgba(255, 255, 255, 0.4);
-		box-shadow: inset 0 0 20px rgba(251, 191, 36, 0.3);
+	/* Kurzgesagt-style Celestial Type Specific Core Styles */
+	.celestial-blackhole .orb-core {
+		background: radial-gradient(circle, 
+			rgba(139, 92, 246, 0.9) 0%, 
+			rgba(59, 130, 246, 0.8) 30%, 
+			rgba(147, 51, 234, 0.7) 60%, 
+			rgba(139, 92, 246, 0.6) 100%);
+		border: 3px solid rgba(139, 92, 246, 0.8);
+		box-shadow: 
+			0 0 20px rgba(139, 92, 246, 0.6),
+			0 0 40px rgba(147, 51, 234, 0.4);
+		position: relative;
+		overflow: visible;
+	}
+
+	.celestial-blackhole .orb-core::before {
+		content: '';
+		position: absolute;
+		inset: -50%;
+		background: radial-gradient(circle, 
+			transparent 0%, 
+			rgba(75, 20, 99, 0.4) 30%, 
+			rgba(107, 33, 168, 0.6) 50%, 
+			rgba(59, 7, 100, 0.5) 70%, 
+			transparent 100%);
+		border-radius: 50%;
+		animation: accretion-disk-spin 12s linear infinite;
+		z-index: -1;
+	}
+
+	.celestial-blackhole .orb-core::after {
+		content: '';
+		position: absolute;
+		inset: -100%;
+		background: conic-gradient(
+			from 0deg,
+			transparent 0deg,
+			rgba(30, 10, 60, 0.3) 45deg,
+			rgba(75, 20, 99, 0.4) 90deg,
+			rgba(30, 10, 60, 0.3) 135deg,
+			transparent 180deg,
+			rgba(59, 7, 100, 0.3) 225deg,
+			rgba(75, 20, 99, 0.4) 270deg,
+			rgba(30, 10, 60, 0.3) 315deg,
+			transparent 360deg
+		);
+		border-radius: 50%;
+		animation: gravitational-field-spin 20s linear infinite;
+		z-index: -2;
+		filter: blur(8px);
+	}
+
+	.celestial-star .orb-core {
+		background: linear-gradient(135deg, 
+			rgba(255, 224, 102, 1) 0%, 
+			rgba(255, 193, 7, 0.95) 30%, 
+			rgba(255, 107, 107, 0.9) 70%, 
+			rgba(255, 152, 0, 0.85) 100%);
+		border: 3px solid rgba(255, 255, 255, 0.6);
+		box-shadow: 
+			inset 0 0 20px rgba(255, 224, 102, 0.4),
+			0 0 25px rgba(255, 224, 102, 0.6),
+			0 0 40px rgba(255, 107, 107, 0.4);
 	}
 
 	.celestial-planet .orb-core {
-		background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(139, 92, 246, 0.8));
-		border: 2px solid rgba(255, 255, 255, 0.3);
-		box-shadow: inset 0 0 15px rgba(59, 130, 246, 0.2);
+		background: linear-gradient(135deg, 
+			rgba(69, 183, 209, 0.95) 0%, 
+			rgba(78, 205, 196, 0.9) 50%, 
+			rgba(45, 183, 245, 0.85) 100%);
+		border: 2px solid rgba(255, 255, 255, 0.5);
+		box-shadow: 
+			inset 0 0 15px rgba(69, 183, 209, 0.3),
+			0 0 20px rgba(78, 205, 196, 0.5);
 	}
 
 	.celestial-moon .orb-core {
-		background: linear-gradient(135deg, rgba(156, 163, 175, 0.8), rgba(107, 114, 128, 0.7));
-		border: 2px solid rgba(255, 255, 255, 0.2);
-		box-shadow: inset 0 0 10px rgba(156, 163, 175, 0.1);
+		background: linear-gradient(135deg, 
+			rgba(150, 206, 180, 0.9) 0%, 
+			rgba(255, 234, 167, 0.8) 50%, 
+			rgba(220, 231, 117, 0.75) 100%);
+		border: 2px solid rgba(255, 255, 255, 0.4);
+		box-shadow: 
+			inset 0 0 10px rgba(150, 206, 180, 0.2),
+			0 0 15px rgba(255, 234, 167, 0.4);
 	}
 
 	.floating-contributor.large .orb-core {
@@ -1054,6 +1483,36 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 		box-shadow: 
 			0 20px 40px rgba(0, 0, 0, 0.4),
 			inset 0 1px 2px rgba(255, 255, 255, 0.1);
+	}
+
+	/* Celestial-specific card sizing */
+	.celestial-blackhole .contributor-card {
+		width: 350px;
+		left: -140px;
+		top: -200px;
+		padding: 25px;
+	}
+
+	.celestial-star .contributor-card,
+	.celestial-sun .contributor-card {
+		width: 320px;
+		left: -130px;
+		top: -190px;
+		padding: 22px;
+	}
+
+	.celestial-planet .contributor-card {
+		width: 300px;
+		left: -120px;
+		top: -180px;
+		padding: 20px;
+	}
+
+	.celestial-moon .contributor-card {
+		width: 280px;
+		left: -110px;
+		top: -170px;
+		padding: 18px;
 	}
 
 	.floating-contributor:hover .contributor-card {
@@ -1126,7 +1585,7 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 	}
 
 	/* Celestial Type Specific Particles */
-	.celestial-sun .contrib-particle {
+	.celestial-star .contrib-particle {
 		background: radial-gradient(circle, rgba(251, 191, 36, 1) 0%, transparent 70%);
 		width: 6px;
 		height: 6px;
@@ -1215,7 +1674,7 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 			display: none; /* Hide orbital paths on mobile */
 		}
 		
-		.celestial-sun:hover::after,
+		.celestial-star:hover::after,
 		.celestial-planet:hover::after {
 			display: none; /* Hide gravitational fields on mobile */
 		}
@@ -1250,7 +1709,7 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 			height: 300px !important;
 		}
 		
-		.celestial-sun .contributor-orb {
+		.celestial-star .contributor-orb {
 			width: 60px;
 			height: 60px;
 		}
@@ -1271,6 +1730,42 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 		z-index: 200;
 	}
 
+	/* Black Hole Gravitational Field Effect */
+	.celestial-blackhole::before {
+		content: '';
+		position: absolute;
+		inset: -200%;
+		background: radial-gradient(circle, 
+			transparent 0%, 
+			rgba(30, 10, 60, 0.15) 20%, 
+			rgba(75, 20, 99, 0.2) 40%, 
+			rgba(30, 10, 60, 0.1) 60%, 
+			transparent 80%);
+		border-radius: 50%;
+		animation: gravitational-waves 15s ease-in-out infinite;
+		z-index: -3;
+		pointer-events: none;
+	}
+
+	@keyframes gravitational-waves {
+		0%, 100% { 
+			transform: scale(1) rotate(0deg); 
+			opacity: 0.6;
+		}
+		25% { 
+			transform: scale(1.2) rotate(90deg); 
+			opacity: 0.8;
+		}
+		50% { 
+			transform: scale(1.4) rotate(180deg); 
+			opacity: 1;
+		}
+		75% { 
+			transform: scale(1.2) rotate(270deg); 
+			opacity: 0.8;
+		}
+	}
+
 	.floating-contributor:hover .orb-glow {
 		animation-duration: 1s;
 		transform: scale(1.5);
@@ -1280,7 +1775,7 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 		animation-duration: 1s;
 	}
 
-	/* Orbital path visualization */
+	/* Orbital path visualization with improved clarity */
 	.floating-contributor::before {
 		content: '';
 		position: absolute;
@@ -1298,6 +1793,7 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 		left: calc(-1 * var(--orbit-radius, 0px));
 		top: calc(-1 * var(--orbit-radius, 0px));
 		border-color: rgba(59, 130, 246, 0.3);
+		border-width: 1px;
 	}
 
 	.celestial-moon::before {
@@ -1306,14 +1802,49 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 		left: calc(-1 * var(--orbit-radius, 0px));
 		top: calc(-1 * var(--orbit-radius, 0px));
 		border-color: rgba(156, 163, 175, 0.3);
+		border-width: 1px;
 	}
 
 	.floating-contributor:hover::before {
 		opacity: 1;
 	}
 
+	/* Enhanced orbital paths showing gravitational influence */
+	.celestial-blackhole::before {
+		width: 400px;
+		height: 400px;
+		left: -200px;
+		top: -200px;
+		border-color: rgba(139, 92, 246, 0.4);
+		border-width: 3px;
+		border-style: solid;
+		background: radial-gradient(circle, transparent 70%, rgba(139, 92, 246, 0.1) 85%, transparent 100%);
+		animation: blackhole-field 6s ease-in-out infinite;
+	}
+
+	.celestial-star::before {
+		width: 200px;
+		height: 200px;
+		left: -100px;
+		top: -100px;
+		border-color: rgba(251, 191, 36, 0.2);
+		border-width: 2px;
+		border-style: dotted;
+	}
+
+	@keyframes blackhole-field {
+		0%, 100% { 
+			transform: scale(1) rotate(0deg); 
+			opacity: 0.3; 
+		}
+		50% { 
+			transform: scale(1.1) rotate(180deg); 
+			opacity: 0.6; 
+		}
+	}
+
 	/* Gravitational field effect */
-	.celestial-sun:hover::after,
+	.celestial-star:hover::after,
 	.celestial-planet:hover::after {
 		content: '';
 		position: absolute;
@@ -1324,7 +1855,7 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 		z-index: -1;
 	}
 
-	.celestial-sun:hover::after {
+	.celestial-star:hover::after {
 		width: 300px;
 		height: 300px;
 		left: -150px;
@@ -1384,11 +1915,17 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 		contributors.forEach((contributor) => {
 			const celestialType = contributor.dataset.celestialType;
 			
-			if (celestialType === 'sun' || celestialType === 'planet') {
+			if (celestialType === 'star' || celestialType === 'sun' || celestialType === 'planet') {
 				contributor.addEventListener('mouseenter', () => {
 					// Find nearby contributors and create attraction effect
 					const contributorRect = contributor.getBoundingClientRect();
-					const attractionRadius = celestialType === 'sun' ? 150 : 100;
+					// Adjust attraction radius based on celestial type and new sizes
+					let attractionRadius = 80; // Default for smaller bodies
+					if (celestialType === 'star' || celestialType === 'sun') {
+						attractionRadius = 120; // Stars have stronger gravitational pull
+					} else if (celestialType === 'planet') {
+						attractionRadius = 100; // Planets have medium pull
+					}
 					
 					contributors.forEach((other) => {
 						if (other === contributor) return;
@@ -1632,6 +2169,164 @@ const moonContributors = contributors.filter(c => c.celestialType === 'moon').le
 			contributor.style.transform = 'translateY(50px)';
 			contributor.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
 			observer.observe(contributor);
+		});
+	});
+
+	// Galaxy Exploration Controls
+	document.addEventListener('DOMContentLoaded', () => {
+		const galaxySpace = document.getElementById('galaxy-space') as HTMLElement;
+		const zoomInBtn = document.getElementById('zoom-in') as HTMLButtonElement;
+		const zoomOutBtn = document.getElementById('zoom-out') as HTMLButtonElement;
+		const resetViewBtn = document.getElementById('reset-view') as HTMLButtonElement;
+		
+		if (!galaxySpace) return;
+
+		let scale = 1;
+		let translateX = 0;
+		let translateY = 0;
+		let isDragging = false;
+		let startX = 0;
+		let startY = 0;
+		let initialTranslateX = 0;
+		let initialTranslateY = 0;
+
+		const minScale = 0.5;
+		const maxScale = 3;
+		const scalStep = 0.2;
+
+		function updateTransform() {
+			galaxySpace.style.transform = `scale(${scale}) translate(${translateX}px, ${translateY}px)`;
+		}
+
+		// Zoom controls
+		zoomInBtn?.addEventListener('click', () => {
+			if (scale < maxScale) {
+				scale = Math.min(maxScale, scale + scalStep);
+				updateTransform();
+			}
+		});
+
+		zoomOutBtn?.addEventListener('click', () => {
+			if (scale > minScale) {
+				scale = Math.max(minScale, scale - scalStep);
+				updateTransform();
+			}
+		});
+
+		resetViewBtn?.addEventListener('click', () => {
+			scale = 1;
+			translateX = 0;
+			translateY = 0;
+			galaxySpace.style.transition = 'transform 0.5s ease-out';
+			updateTransform();
+			setTimeout(() => {
+				galaxySpace.style.transition = 'transform 0.3s ease-out';
+			}, 500);
+		});
+
+		// Mouse wheel zoom
+		galaxySpace.addEventListener('wheel', (e) => {
+			e.preventDefault();
+			const delta = e.deltaY > 0 ? -scalStep : scalStep;
+			const newScale = Math.max(minScale, Math.min(maxScale, scale + delta));
+			
+			if (newScale !== scale) {
+				scale = newScale;
+				updateTransform();
+			}
+		});
+
+		// Drag to pan
+		galaxySpace.addEventListener('mousedown', (e) => {
+			isDragging = true;
+			startX = e.clientX;
+			startY = e.clientY;
+			initialTranslateX = translateX;
+			initialTranslateY = translateY;
+			galaxySpace.style.cursor = 'grabbing';
+			galaxySpace.style.transition = 'none';
+		});
+
+		document.addEventListener('mousemove', (e) => {
+			if (!isDragging) return;
+			
+			const deltaX = (e.clientX - startX) / scale;
+			const deltaY = (e.clientY - startY) / scale;
+			
+			translateX = initialTranslateX + deltaX;
+			translateY = initialTranslateY + deltaY;
+			
+			updateTransform();
+		});
+
+		document.addEventListener('mouseup', () => {
+			if (isDragging) {
+				isDragging = false;
+				galaxySpace.style.cursor = 'grab';
+				galaxySpace.style.transition = 'transform 0.3s ease-out';
+			}
+		});
+
+		// Touch support for mobile
+		let touchStartDistance = 0;
+		let touchStartScale = 1;
+
+		galaxySpace.addEventListener('touchstart', (e) => {
+			if (e.touches.length === 1 && e.touches[0]) {
+				// Single touch - pan
+				isDragging = true;
+				startX = e.touches[0].clientX;
+				startY = e.touches[0].clientY;
+				initialTranslateX = translateX;
+				initialTranslateY = translateY;
+				galaxySpace.style.transition = 'none';
+			} else if (e.touches.length === 2 && e.touches[0] && e.touches[1]) {
+				// Pinch zoom
+				const touch1 = e.touches[0];
+				const touch2 = e.touches[1];
+				touchStartDistance = Math.hypot(
+					touch2.clientX - touch1.clientX,
+					touch2.clientY - touch1.clientY
+				);
+				touchStartScale = scale;
+			}
+			e.preventDefault();
+		});
+
+		galaxySpace.addEventListener('touchmove', (e) => {
+			if (e.touches.length === 1 && isDragging && e.touches[0]) {
+				// Pan
+				const deltaX = (e.touches[0].clientX - startX) / scale;
+				const deltaY = (e.touches[0].clientY - startY) / scale;
+				
+				translateX = initialTranslateX + deltaX;
+				translateY = initialTranslateY + deltaY;
+				
+				updateTransform();
+			} else if (e.touches.length === 2 && e.touches[0] && e.touches[1]) {
+				// Pinch zoom
+				const touch1 = e.touches[0];
+				const touch2 = e.touches[1];
+				const currentDistance = Math.hypot(
+					touch2.clientX - touch1.clientX,
+					touch2.clientY - touch1.clientY
+				);
+				
+				if (touchStartDistance > 0) {
+					const newScale = Math.max(minScale, Math.min(maxScale, 
+						touchStartScale * (currentDistance / touchStartDistance)
+					));
+					scale = newScale;
+					updateTransform();
+				}
+			}
+			e.preventDefault();
+		});
+
+		galaxySpace.addEventListener('touchend', () => {
+			isDragging = false;
+			touchStartDistance = 0;
+			galaxySpace.style.transition = 'transform 0.3s ease-out';
 		});
 	});
 </script>
